@@ -65,18 +65,15 @@
 
 /// Config resolution.
 pub(crate) mod config;
-/// Project context handling.
-pub(crate) mod context;
 /// Nux core error types.
 pub(crate) mod error;
-/// Symlink handling.
-pub(crate) mod links;
-/// Process handling.
-pub(crate) mod process;
-/// Profile resolution and management.
-pub(crate) mod profile;
-/// Workspace resolution and management.
-pub(crate) mod workspace;
+/// Command executor.
+pub(crate) mod exec;
+
+// Re-exports.
+pub use config::{discover_config, load_config, ConfigContext, NxusConfig, ResolvedConfig};
+pub use error::{CoreError, CoreResult};
+pub use exec::{Cmd, ExecError, Runner};
 
 /// Remove this and implement your logic in this lib.
 #[must_use]

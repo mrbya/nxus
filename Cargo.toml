@@ -36,8 +36,15 @@ publish                 = true
 # nxus crates
 nxus-shell  = { path = "crates/nxus-shell" }
 nxus-core   = { path = "crates/nxus-core" }
-# Other workspace deps
+# Other runtime deps
 clap                    = { version = "4", features = ["derive"] }
+thiserror               = { version = "2" }
+termcolor               = { version = "1.4.1" }
+spinners                = { version = "4.1.1" }
+serde                   = { version = "1", default-features = false, features = ["serde_derive"] }
+toml                    = { version = "1.0.3", features = ["preserve_order"] }
+indexmap                = { version = "2.14", features = ["serde"] }
+# Dev deps
 criterion               = { version = "0.8" }
 pretty_assertions       = { version = "1" }
 assert_cmd              = { version = "2" }
@@ -53,8 +60,9 @@ assert_cmd.workspace = true
 predicates.workspace = true
 
 [features]
-default = []
-full = []
+default = ["spinners"]
+full = ["spinners"]
+spinners = []
 
 # [lib]
 # bench = false
