@@ -3,9 +3,6 @@
 //! Implements `nxus`'s command handlers and re-exports them for the shell
 //! crate.
 
-/// Prints a greeting.
-pub mod greet;
-
 /// Builds project for a specific profile.
 pub mod build;
 /// Cleans up all build artifacts and workspace.
@@ -26,4 +23,3 @@ pub mod sim;
 pub mod test;
 
 // Command re-exports for cli parser,
-pub use greet::greet;
