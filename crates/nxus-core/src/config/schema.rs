@@ -266,6 +266,7 @@ const DEFAULT_TEST_CONFIG_BASE: &str = "nsh";
 
 impl ProfileConfig {
     /// Constructs default sim profile config.
+    #[must_use]
     pub fn new_sim() -> Self {
         Self {
             arch: DEFAULT_SIM_ARCH.into(),
@@ -276,6 +277,7 @@ impl ProfileConfig {
     }
 
     /// Constructs default test profile config.
+    #[must_use]
     pub fn new_test() -> Self {
         Self {
             arch: DEFAULT_TEST_ARCH.into(),
@@ -289,6 +291,7 @@ impl ProfileConfig {
     ///
     /// # Return
     /// Merged profile config with RHS values taking precedence.
+    #[must_use]
     pub fn overlay(mut self, rhs: Self) -> Self {
         self = rhs;
         self

@@ -71,7 +71,9 @@ pub(crate) mod error;
 pub(crate) mod exec;
 
 // Re-exports.
-pub use config::{discover_config, load_config, ConfigContext, NxusConfig, ResolvedConfig};
+pub use config::{
+    discover_config, load_config, ConfigContext, NxusConfig, ProfileConfig, ResolvedConfig,
+};
 pub use error::{CoreError, CoreResult};
 pub use exec::{Cmd, ExecError, Runner};
 

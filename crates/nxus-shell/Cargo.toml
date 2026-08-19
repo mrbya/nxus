@@ -12,7 +12,9 @@ categories.workspace    = true
 description             = "nxus - Clap CLI, logging, UX"
 
 [dependencies]
+nxus-core.workspace     = true
 clap.workspace          = true
+indexmap.workspace      = true
 
 [dev-dependencies]
 

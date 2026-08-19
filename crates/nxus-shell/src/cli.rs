@@ -1,6 +1,9 @@
 use std::process::ExitCode;
 
 use clap::{Parser, Subcommand};
+use nxus_core::{discover_config, load_config, ResolvedConfig};
+
+use crate::commands::{clean, profiles};
 
 /// `nxus` CLI parser.
 #[derive(Debug, Parser)]
@@ -74,21 +77,45 @@ pub enum Command {
     /// Initializes `NuttX` project with `nxus.toml`.
     #[command(alias = "i")]
     Init,
+
+    /// Lists available profiles.
+    #[command(alias = "p")]
+    Profiles,
 }
 
 /// Runs `nxus` CLI.
 #[must_use]
 pub fn run() -> ExitCode {
-    let _ = Cli::parse();
+    let cli = Cli::parse();
 
-    //match cli.command {
-    //    Command::Greet(args) => commands::greet(args),
-    //    Command::NewCommand => {
-    //        eprintln!("Command unknown or not implemented yet");
-    //        ExitCode::FAILURE
-    //    }
-    //    _ => ExitCode::FAILURE,
-    //}
+    let ctx = match discover_config(None) {
+        Ok(ctx) => ctx,
+        Err(error) => {
+            eprintln!("{error}");
+            return ExitCode::FAILURE;
+        }
+    };
 
-    ExitCode::FAILURE
+    let cfg = match load_config(&ctx.project_dir) {
+        Ok(cfg) => cfg,
+        Err(error) => {
+            eprintln!("{error}");
+            return ExitCode::FAILURE;
+        }
+    };
+
+    let resolved =
+        match ResolvedConfig::resolve(cli.clean, cli.verbose, &ctx, cli.profile.clone(), &cfg) {
+            Ok(resolved) => resolved,
+            Err(error) => {
+                eprintln!("{error}");
+                return ExitCode::FAILURE;
+            }
+        };
+
+    match cli.command {
+        Command::Profiles => profiles(resolved, cfg.profiles),
+        Command::Clean => clean(resolved, cli.profile.as_ref()),
+        _ => ExitCode::FAILURE,
+    }
 }
