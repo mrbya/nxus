@@ -1,11 +1,13 @@
 use std::path::PathBuf;
 
+use indexmap::IndexMap;
+
 use crate::{
     config::{
         ConfigContext, NxusConfig, DEFAULT_BUILD_ROOT, DEFAULT_NUTTX_APPS_SRC, DEFAULT_NUTTX_SRC,
         DEFAULT_OVERLAY_ROOT, DEFAULT_PROJECT_DEFAULT_PROFILE, DEFAULT_WORKSPACE_ROOT,
     },
-    CoreError, CoreResult,
+    CoreError, CoreResult, ProfileConfig,
 };
 
 /// Resolved nxus configuration after parsing and resolving profile.
@@ -18,8 +20,12 @@ pub struct ResolvedConfig {
     pub verbose: u8,
     /// Config discovery context.
     pub ctx: ConfigContext,
+    /// Profile selected?
+    pub profile_selected: bool,
     /// Selected profile name, if any.
     pub profile: String,
+    /// Profiles.
+    pub profiles: IndexMap<String, ProfileConfig>,
 
     /// Build dir related config values.
     /// Project build root path.
@@ -62,10 +68,10 @@ impl ResolvedConfig {
         clean: bool,
         verbose: u8,
         ctx: &ConfigContext,
-        profile: Option<String>,
+        profile: Option<&String>,
         cfg: &NxusConfig,
     ) -> CoreResult<Self> {
-        let selected = select_profile(profile, cfg)?;
+        let selected = select_profile(profile.cloned(), cfg)?;
 
         let build_root = ctx.project_dir.join(
             cfg.build
@@ -121,7 +127,9 @@ impl ResolvedConfig {
             clean,
             verbose,
             ctx: ctx.clone(),
+            profile_selected: profile.is_some(),
             profile: selected,
+            profiles: cfg.profiles.clone(),
             build_root,
             build_dir,
             link_compile_commands,
