@@ -1,11 +1,10 @@
 use std::process::ExitCode;
 
-use indexmap::IndexMap;
-use nxus_core::{ProfileConfig, ResolvedConfig};
+use nxus_core::ResolvedConfig;
 
 /// Nxus command: profiles.
-pub fn profiles(_: ResolvedConfig, profiles: IndexMap<String, ProfileConfig>) -> ExitCode {
-    if profiles.is_empty() {
+pub fn profiles(cfg: ResolvedConfig) -> ExitCode {
+    if cfg.profiles.is_empty() {
         eprintln!("akafuka");
         return ExitCode::FAILURE;
     }
@@ -19,7 +18,7 @@ pub fn profiles(_: ResolvedConfig, profiles: IndexMap<String, ProfileConfig>) ->
         "", "", "", "", ""
     );
 
-    for (profile, config) in profiles {
+    for (profile, config) in cfg.profiles {
         println!(
             "{:<12} {:<12} {:<12} {:<24} {:<12}",
             profile, config.arch, config.family, config.board, config.config_base

@@ -3,8 +3,8 @@ use std::{fs, process::ExitCode};
 use nxus_core::ResolvedConfig;
 
 /// Nxus command: clean
-pub fn clean(cfg: ResolvedConfig, profile: Option<&String>) -> ExitCode {
-    if profile.is_some() {
+pub fn clean(cfg: ResolvedConfig) -> ExitCode {
+    if cfg.profile_selected {
         match fs::remove_dir_all(cfg.build_dir) {
             Ok(()) => return ExitCode::SUCCESS,
             Err(error) => {

@@ -105,7 +105,7 @@ pub fn run() -> ExitCode {
     };
 
     let resolved =
-        match ResolvedConfig::resolve(cli.clean, cli.verbose, &ctx, cli.profile.clone(), &cfg) {
+        match ResolvedConfig::resolve(cli.clean, cli.verbose, &ctx, cli.profile.as_ref(), &cfg) {
             Ok(resolved) => resolved,
             Err(error) => {
                 eprintln!("{error}");
@@ -114,8 +114,8 @@ pub fn run() -> ExitCode {
         };
 
     match cli.command {
-        Command::Profiles => profiles(resolved, cfg.profiles),
-        Command::Clean => clean(resolved, cli.profile.as_ref()),
+        Command::Profiles => profiles(resolved),
+        Command::Clean => clean(resolved),
         _ => ExitCode::FAILURE,
     }
 }
