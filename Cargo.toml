@@ -82,7 +82,7 @@ required-features = ["full"]
 normal = [
     "nxus",
 ]
-development = ["criterion", "pretty_assertions"]
+development = ["criterion", "pretty_assertions", "assert_cmd", "predicates"]
 
 [package.metadata.playground]
 features = ["full"]

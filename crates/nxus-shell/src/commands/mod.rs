@@ -23,6 +23,9 @@ pub mod sim;
 pub mod test;
 
 // Command re-exports for cli parser,
+pub use build::build;
 pub use clean::clean;
 pub use config::config;
 pub use profiles::profiles;
+pub use run::run_binary;
+pub use sim::sim;

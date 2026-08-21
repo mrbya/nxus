@@ -1,9 +1,9 @@
 use std::process::ExitCode;
 
 use clap::{Parser, Subcommand};
-use nxus_core::{discover_config, load_config, ResolvedConfig};
+use nxus_core::{ResolvedConfig, discover_config, load_config};
 
-use crate::commands::{clean, config, profiles};
+use crate::commands::{build, clean, config, profiles, run_binary, sim};
 
 /// `nxus` CLI parser.
 #[derive(Debug, Parser)]
@@ -124,9 +124,12 @@ pub fn run() -> ExitCode {
     };
 
     match cli.command {
-        Command::Profiles => profiles(resolved),
-        Command::Clean => clean(resolved),
+        Command::Profiles => profiles(&resolved),
+        Command::Clean => clean(&resolved),
         Command::Config => config(&resolved),
+        Command::Build => build(&resolved),
+        Command::Run => run_binary(&resolved),
+        Command::Sim => sim(&resolved),
         _ => ExitCode::FAILURE,
     }
 }
