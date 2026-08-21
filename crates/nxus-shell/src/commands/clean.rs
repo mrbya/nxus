@@ -1,13 +1,11 @@
 use std::fs;
 use std::process::ExitCode;
 
-use nxus_core::{ResolvedConfig, unlink_app, unlink_config};
+use nxus_core::{unlink_app, unlink_config, ResolvedConfig};
 
 /// Nxus command: clean
 pub fn clean(cfg: &ResolvedConfig) -> ExitCode {
     let mut err = false;
-
-    println!("{cfg:?}");
 
     if cfg.profile_selected {
         if let Err(error) = unlink_config(cfg, &cfg.profile, cfg.profiles.get(&cfg.profile)) {

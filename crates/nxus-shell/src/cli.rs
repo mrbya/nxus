@@ -1,9 +1,9 @@
 use std::process::ExitCode;
 
 use clap::{Parser, Subcommand};
-use nxus_core::{ResolvedConfig, discover_config, load_config};
+use nxus_core::{discover_config, load_config, ResolvedConfig};
 
-use crate::commands::{build, clean, config, profiles, run_binary, sim};
+use crate::commands::{build, clean, config, menuconfig, profiles, run_binary, sim};
 
 /// `nxus` CLI parser.
 #[derive(Debug, Parser)]
@@ -57,6 +57,10 @@ pub enum Command {
     /// Builds project for a specific profile.
     #[command(alias = "b")]
     Build,
+
+    /// Opens Kconfig config TUI for a specific profile.
+    #[command(alias = "m")]
+    Menuconfig,
 
     /// Runs binary built for a specific profile.
     #[command(alias = "r")]
@@ -130,6 +134,7 @@ pub fn run() -> ExitCode {
         Command::Build => build(&resolved),
         Command::Run => run_binary(&resolved),
         Command::Sim => sim(&resolved),
+        Command::Menuconfig => menuconfig(&resolved),
         _ => ExitCode::FAILURE,
     }
 }

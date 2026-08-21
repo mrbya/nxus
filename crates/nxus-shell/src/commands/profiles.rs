@@ -10,17 +10,14 @@ pub fn profiles(cfg: &ResolvedConfig) -> ExitCode {
     }
 
     println!(
-        "{:<12} {:<12} {:<12} {:<24} {:<12}",
-        "Profile", "Family", "Arch", "Board", "Config base"
+        "{:<12} {:<12} {:<12} {:<36}",
+        "Profile", "Family", "Arch", "Target"
     );
-    println!(
-        "{:-<12} {:-<12} {:-<12} {:-<24} {:-<12}",
-        "", "", "", "", ""
-    );
+    println!("{:-<12} {:-<12} {:-<12} {:-<36}", "", "", "", "");
 
     for (profile, config) in &cfg.profiles {
         println!(
-            "{:<12} {:<12} {:<12} {:<24} {:<12}",
+            "{:<12} {:<12} {:<12} {}:{}",
             profile, config.arch, config.family, config.board, config.config_base
         );
     }
