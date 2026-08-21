@@ -3,7 +3,7 @@ use std::process::ExitCode;
 use clap::{Parser, Subcommand};
 use nxus_core::{discover_config, load_config, ResolvedConfig};
 
-use crate::commands::{clean, profiles};
+use crate::commands::{clean, config, profiles};
 
 /// `nxus` CLI parser.
 #[derive(Debug, Parser)]
@@ -27,8 +27,12 @@ pub struct Cli {
     pub clean: bool,
 
     /// Verbosity (repeatable).
-    #[arg(short = 'v', long = "verbose", action = clap::ArgAction::Count, default_value_t = 2)]
+    #[arg(short = 'v', action = clap::ArgAction::Count, default_value_t = 2)]
     pub verbose: u8,
+
+    /// Dry run command?
+    #[arg(short = 'd', long = "dry-run")]
+    pub dry_run: bool,
 
     /// Profile to run command for.
     #[arg(short = 'p', long)]
@@ -48,7 +52,7 @@ pub enum Command {
 
     /// Configures `NuttX` for a specific profile.
     #[command(alias = "cf")]
-    Conf,
+    Config,
 
     /// Builds project for a specific profile.
     #[command(alias = "b")]
@@ -104,18 +108,25 @@ pub fn run() -> ExitCode {
         }
     };
 
-    let resolved =
-        match ResolvedConfig::resolve(cli.clean, cli.verbose, &ctx, cli.profile.as_ref(), &cfg) {
-            Ok(resolved) => resolved,
-            Err(error) => {
-                eprintln!("{error}");
-                return ExitCode::FAILURE;
-            }
-        };
+    let resolved = match ResolvedConfig::resolve(
+        cli.clean,
+        cli.verbose,
+        cli.dry_run,
+        &ctx,
+        cli.profile.as_ref(),
+        &cfg,
+    ) {
+        Ok(resolved) => resolved,
+        Err(error) => {
+            eprintln!("{error}");
+            return ExitCode::FAILURE;
+        }
+    };
 
     match cli.command {
         Command::Profiles => profiles(resolved),
         Command::Clean => clean(resolved),
+        Command::Config => config(&resolved),
         _ => ExitCode::FAILURE,
     }
 }

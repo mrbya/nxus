@@ -8,7 +8,7 @@ pub mod build;
 /// Cleans up all build artifacts and workspace.
 pub mod clean;
 /// Configures `NuttX` for a specific profile.
-pub mod conf;
+pub mod config;
 /// Flashes project binary built for a profile.
 pub mod flash;
 /// Opens menuconfig for a specific profile.
@@ -24,4 +24,5 @@ pub mod test;
 
 // Command re-exports for cli parser,
 pub use clean::clean;
+pub use config::config;
 pub use profiles::profiles;
