@@ -1,14 +1,16 @@
 use std::fs;
 use std::process::ExitCode;
 
-use nxus_core::{unlink_app, unlink_config, ResolvedConfig};
+use nxus_core::{ResolvedConfig, unlink_app, unlink_config};
 
 /// Nxus command: clean
-pub fn clean(cfg: ResolvedConfig) -> ExitCode {
+pub fn clean(cfg: &ResolvedConfig) -> ExitCode {
     let mut err = false;
 
+    println!("{cfg:?}");
+
     if cfg.profile_selected {
-        if let Err(error) = unlink_config(&cfg, &cfg.profile, cfg.profiles.get(&cfg.profile)) {
+        if let Err(error) = unlink_config(cfg, &cfg.profile, cfg.profiles.get(&cfg.profile)) {
             eprintln!("{error}");
             err = true;
         }
@@ -20,20 +22,20 @@ pub fn clean(cfg: ResolvedConfig) -> ExitCode {
             }
         }
     } else {
-        if let Err(error) = unlink_app(&cfg) {
+        if let Err(error) = unlink_app(cfg) {
             eprintln!("{error}");
             err = true;
         }
 
         for (profile_name, profile) in &cfg.profiles {
-            if let Err(error) = unlink_config(&cfg, profile_name, Some(profile)) {
+            if let Err(error) = unlink_config(cfg, profile_name, Some(profile)) {
                 eprintln!("{error}");
                 err = true;
             }
         }
 
         if cfg.build_root.exists() {
-            if let Err(error) = fs::remove_dir_all(cfg.build_root) {
+            if let Err(error) = fs::remove_dir_all(&cfg.build_root) {
                 eprintln!("{error}");
                 err = true;
             }

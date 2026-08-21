@@ -1,6 +1,6 @@
 use std::process::ExitCode;
 
-use nxus_core::{ensure_workspace, generate_config, link_app, link_config, Cmd, ResolvedConfig};
+use nxus_core::{Cmd, ResolvedConfig, ensure_workspace, generate_config, link_app, link_config};
 
 /// Nxus command: config.
 pub fn config(cfg: &ResolvedConfig) -> ExitCode {
@@ -32,9 +32,9 @@ pub fn config(cfg: &ResolvedConfig) -> ExitCode {
         .arg("-B")
         .arg(&cfg.build_dir)
         .arg("-GNinja")
-        .arg(format!("-DBOARD_CONFIG=\"{}:{}\"", cfg.board, cfg.profile))
+        .arg(format!("-DBOARD_CONFIG={}:{}", cfg.board, cfg.profile))
         .arg(format!(
-            "-DNUTTX_APPS_DIR=\"{}\"",
+            "-DNUTTX_APPS_DIR={}",
             cfg.workspace_root.join("nuttx-apps").display()
         ));
 
