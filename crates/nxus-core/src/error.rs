@@ -1,8 +1,6 @@
-use std::path::PathBuf;
+use std::{path::PathBuf, process::ExitStatus};
 
 use thiserror::Error;
-
-use crate::ExecError;
 
 /// Result type alias used by `nxus-core`.
 pub type CoreResult<T> = std::result::Result<T, CoreError>;
@@ -22,8 +20,13 @@ pub enum CoreError {
     Io(#[from] std::io::Error),
 
     /// Command execution error.
-    #[error(transparent)]
-    Exec(#[from] ExecError),
+    #[error("command `{cmd}` failed with status: {status}")]
+    CommandFailed {
+        /// Command that failed.
+        cmd: String,
+        /// Command exit status.
+        status: ExitStatus,
+    },
 
     /// Failed to find config file.
     #[error("`nxus.toml` config not found, search started in: {start}")]
@@ -54,5 +57,46 @@ pub enum CoreError {
     Resolve {
         /// Config value that failed to be resolved.
         value: String,
+    },
+
+    /// Selected path is not a directory.
+    #[error("`{path}` already exists and is not a directory")]
+    PathNotDir {
+        /// Selected path.
+        path: PathBuf,
+    },
+
+    /// Selected path is not a symlink.
+    #[error("`{path}` already exists and is not a symlink")]
+    PathNotSymlink {
+        /// Selected path.
+        path: PathBuf,
+    },
+
+    /// Selected path is not a file.
+    #[error("`{path}` is not a file")]
+    PathNotFile {
+        /// Selected path.
+        path: PathBuf,
+    },
+
+    /// `nuttx` repo clone is missing in workspace.
+    #[error(
+        "`{name}` clone missing in `{workspace_root}`, make sure you have initialized nxus workspace"
+    )]
+    WorkspaceRepoMissing {
+        /// Workspace clone repo name.
+        name: String,
+        /// Nxus project-local workspace root.
+        workspace_root: PathBuf,
+    },
+
+    /// Required config base for the selected board not found.
+    #[error("config `{config_base}` for board `{board}` not found")]
+    ConfigBaseNotFound {
+        /// Board the config base belongs to.
+        board: String,
+        /// Config base.
+        config_base: String,
     },
 }

@@ -2,22 +2,22 @@ use std::path::PathBuf;
 
 use indexmap::IndexMap;
 
-use crate::{
-    config::{
-        ConfigContext, NxusConfig, DEFAULT_BUILD_ROOT, DEFAULT_NUTTX_APPS_SRC, DEFAULT_NUTTX_SRC,
-        DEFAULT_OVERLAY_ROOT, DEFAULT_PROJECT_DEFAULT_PROFILE, DEFAULT_WORKSPACE_ROOT,
-    },
-    CoreError, CoreResult, ProfileConfig,
+use crate::config::{
+    ConfigContext, NxusConfig, DEFAULT_BUILD_ROOT, DEFAULT_NUTTX_APPS_SRC, DEFAULT_NUTTX_SRC,
+    DEFAULT_OVERLAY_ROOT, DEFAULT_PROJECT_DEFAULT_PROFILE, DEFAULT_WORKSPACE_ROOT,
 };
+use crate::{CoreError, CoreResult, ProfileConfig, Runner};
 
 /// Resolved nxus configuration after parsing and resolving profile.
 #[derive(Debug, Clone)]
 pub struct ResolvedConfig {
     /// General config values
+    /// Current working dir.
+    pub cwd: PathBuf,
     /// Pre-celan profile build dir?
     pub clean: bool,
-    /// Verbosity.
-    pub verbose: u8,
+    /// Runner with verbosity and dry-run config.
+    pub runner: Runner,
     /// Config discovery context.
     pub ctx: ConfigContext,
     /// Profile selected?
@@ -67,6 +67,7 @@ impl ResolvedConfig {
     pub fn resolve(
         clean: bool,
         verbose: u8,
+        dry_run: bool,
         ctx: &ConfigContext,
         profile: Option<&String>,
         cfg: &NxusConfig,
@@ -124,8 +125,9 @@ impl ResolvedConfig {
             .join(format!("{selected}.overlay"));
 
         Ok(Self {
+            cwd: std::env::current_dir()?,
             clean,
-            verbose,
+            runner: Runner { verbose, dry_run },
             ctx: ctx.clone(),
             profile_selected: profile.is_some(),
             profile: selected,

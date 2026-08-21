@@ -1,6 +1,8 @@
-use std::{fs, path::Path};
+use std::fs;
+use std::path::Path;
 
-use crate::{config::NxusConfig, CoreError, CoreResult};
+use crate::config::NxusConfig;
+use crate::{CoreError, CoreResult};
 
 /// Loads `nxus.toml` configuration for a project.
 ///

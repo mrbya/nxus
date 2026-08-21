@@ -69,13 +69,18 @@ pub(crate) mod config;
 pub(crate) mod error;
 /// Command executor.
 pub(crate) mod exec;
+/// Workspace manipulation.
+pub(crate) mod workspace;
 
 // Re-exports.
 pub use config::{
     discover_config, load_config, ConfigContext, NxusConfig, ProfileConfig, ResolvedConfig,
 };
 pub use error::{CoreError, CoreResult};
-pub use exec::{Cmd, ExecError, Runner};
+pub use exec::{Cmd, Runner};
+pub use workspace::{
+    ensure_workspace, generate_config, link_app, link_config, unlink_app, unlink_config,
+};
 
 /// Remove this and implement your logic in this lib.
 #[must_use]
