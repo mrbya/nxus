@@ -260,7 +260,7 @@ fn start_spinner(verbose: u8, dry_run: bool, message: Option<&str>) -> Option<Sp
     if dry_run || verbose != 2 {
         return None;
     }
-    let msg = message.map_or_else(String::new, |m| format!("kaze: {m}"));
+    let msg = message.map_or_else(String::new, |m| format!("nxus: {m}"));
     if msg.is_empty() {
         return None;
     }

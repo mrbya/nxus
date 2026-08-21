@@ -33,7 +33,7 @@ pub fn ensure_workspace(cfg: &ResolvedConfig) -> CoreResult<()> {
         cfg.runner,
     )?;
     repo_ensure(
-        "nuttx_apps",
+        "nuttx-apps",
         &cfg.nuttx_apps_src,
         &cfg.workspace_root.join("nuttx-apps"),
         cfg.nuttx_apps_rev.as_ref(),
@@ -49,9 +49,9 @@ pub fn ensure_workspace(cfg: &ResolvedConfig) -> CoreResult<()> {
 /// - underlying I/O operation fails.
 pub fn link_app(cfg: &ResolvedConfig) -> CoreResult<()> {
     repo_check("nuttx", &cfg.workspace_root)?;
-    repo_check("nuttx_apps", &cfg.workspace_root)?;
+    repo_check("nuttx-apps", &cfg.workspace_root)?;
 
-    let link_path = cfg.workspace_root.join("external");
+    let link_path = cfg.workspace_root.join("nuttx-apps").join("external");
 
     if !link_path.exists() {
         symlink_dir(&cfg.cwd, &link_path)?;
