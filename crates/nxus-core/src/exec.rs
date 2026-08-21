@@ -3,11 +3,10 @@ use std::fmt::Write as FmtWrite;
 use std::io::Write as IoWrite;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
-
-#[cfg(feature = "spinners")]
-use std::sync::atomic::{AtomicBool, Ordering};
 #[cfg(feature = "spinners")]
 use std::sync::Arc;
+#[cfg(feature = "spinners")]
+use std::sync::atomic::{AtomicBool, Ordering};
 #[cfg(feature = "spinners")]
 use std::thread::JoinHandle;
 #[cfg(feature = "spinners")]

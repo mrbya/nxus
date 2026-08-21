@@ -3,8 +3,8 @@ use std::path::PathBuf;
 use indexmap::IndexMap;
 
 use crate::config::{
-    ConfigContext, NxusConfig, DEFAULT_BUILD_ROOT, DEFAULT_NUTTX_APPS_SRC, DEFAULT_NUTTX_SRC,
-    DEFAULT_OVERLAY_ROOT, DEFAULT_PROJECT_DEFAULT_PROFILE, DEFAULT_WORKSPACE_ROOT,
+    ConfigContext, DEFAULT_BUILD_ROOT, DEFAULT_NUTTX_APPS_SRC, DEFAULT_NUTTX_SRC,
+    DEFAULT_OVERLAY_ROOT, DEFAULT_PROJECT_DEFAULT_PROFILE, DEFAULT_WORKSPACE_ROOT, NxusConfig,
 };
 use crate::{CoreError, CoreResult, ProfileConfig, Runner};
 
@@ -146,6 +146,15 @@ impl ResolvedConfig {
             config_base,
             config_overlay,
         })
+    }
+
+    /// Creates new resilved config and overwrites its selected profile.
+    #[must_use]
+    pub fn with_profile(&self, profile: &str) -> Self {
+        let mut config = self.clone();
+        config.profile_selected = true;
+        config.profile = String::from(profile);
+        config
     }
 }
 

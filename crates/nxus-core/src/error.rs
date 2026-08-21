@@ -1,4 +1,5 @@
-use std::{path::PathBuf, process::ExitStatus};
+use std::path::PathBuf;
+use std::process::ExitStatus;
 
 use thiserror::Error;
 
@@ -82,7 +83,8 @@ pub enum CoreError {
 
     /// `nuttx` repo clone is missing in workspace.
     #[error(
-        "`{name}` clone missing in `{workspace_root}`, make sure you have initialized nxus workspace"
+        "`{name}` clone missing in `{workspace_root}`, make sure you have initialized nxus \
+         workspace"
     )]
     WorkspaceRepoMissing {
         /// Workspace clone repo name.

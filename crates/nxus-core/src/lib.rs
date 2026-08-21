@@ -69,24 +69,17 @@ pub(crate) mod config;
 pub(crate) mod error;
 /// Command executor.
 pub(crate) mod exec;
+/// Project-wide path resolution helpers.
+pub mod paths;
 /// Workspace manipulation.
 pub(crate) mod workspace;
 
 // Re-exports.
 pub use config::{
-    discover_config, load_config, ConfigContext, NxusConfig, ProfileConfig, ResolvedConfig,
+    ConfigContext, NxusConfig, ProfileConfig, ResolvedConfig, discover_config, load_config,
 };
 pub use error::{CoreError, CoreResult};
 pub use exec::{Cmd, Runner};
 pub use workspace::{
     ensure_workspace, generate_config, link_app, link_config, unlink_app, unlink_config,
 };
-
-/// Remove this and implement your logic in this lib.
-#[must_use]
-pub fn add(a: i64, b: i64) -> i64 {
-    a.checked_add(b).unwrap_or(a)
-}
-
-#[cfg(test)]
-mod tests;

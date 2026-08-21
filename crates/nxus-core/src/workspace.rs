@@ -1,11 +1,9 @@
-use std::{
-    fs,
-    path::{Path, PathBuf},
-};
+use std::fs;
+use std::path::Path;
 
 use symlink::{remove_symlink_auto, symlink_dir};
 
-use crate::{Cmd, CoreError, CoreResult, ProfileConfig, ResolvedConfig, Runner};
+use crate::{Cmd, CoreError, CoreResult, ProfileConfig, ResolvedConfig, Runner, paths};
 
 /// Ensures project-local nuttx workspace setup.
 ///
@@ -28,14 +26,14 @@ pub fn ensure_workspace(cfg: &ResolvedConfig) -> CoreResult<()> {
     repo_ensure(
         "nuttx",
         &cfg.nuttx_src,
-        &cfg.workspace_root.join("nuttx"),
+        &paths::nuttx(cfg),
         cfg.nuttx_rev.as_ref(),
         cfg.runner,
     )?;
     repo_ensure(
         "nuttx-apps",
         &cfg.nuttx_apps_src,
-        &cfg.workspace_root.join("nuttx-apps"),
+        &paths::nuttx_apps(cfg),
         cfg.nuttx_apps_rev.as_ref(),
         cfg.runner,
     )
@@ -51,7 +49,7 @@ pub fn link_app(cfg: &ResolvedConfig) -> CoreResult<()> {
     repo_check("nuttx", &cfg.workspace_root)?;
     repo_check("nuttx-apps", &cfg.workspace_root)?;
 
-    let link_path = cfg.workspace_root.join("nuttx-apps").join("external");
+    let link_path = paths::app_link(cfg);
 
     if !link_path.exists() {
         symlink_dir(&cfg.cwd, &link_path)?;
@@ -76,7 +74,7 @@ pub fn link_app(cfg: &ResolvedConfig) -> CoreResult<()> {
 /// # Errors
 /// Returns [`CoreError::Io`] if an underlying I/O operation fails.
 pub fn unlink_app(cfg: &ResolvedConfig) -> CoreResult<()> {
-    let link_path = cfg.workspace_root.join("external");
+    let link_path = paths::app_link(cfg);
 
     if link_path.exists() && link_path.is_symlink() {
         remove_symlink_auto(link_path)?;
@@ -94,20 +92,14 @@ pub fn unlink_app(cfg: &ResolvedConfig) -> CoreResult<()> {
 /// - config overlay path exists but is not a file,
 /// - underlying I/O operation fails.
 pub fn generate_config(cfg: &ResolvedConfig) -> CoreResult<()> {
-    let config_path = cfg
-        .workspace_root
-        .join("configs")
-        .join(&cfg.profile)
-        .join("defconfig");
+    let config_path = paths::generated_config_file(cfg, &cfg.profile);
     let config_present = config_path.exists();
 
     if config_present && !config_path.is_file() {
         return Err(CoreError::PathNotFile { path: config_path });
     }
 
-    let config_base = board_config_dir_root(cfg)
-        .join(&cfg.config_base)
-        .join("defconfig");
+    let config_base = paths::board_config_base(cfg);
 
     if !config_base.exists() {
         return Err(CoreError::ConfigBaseNotFound {
@@ -116,7 +108,7 @@ pub fn generate_config(cfg: &ResolvedConfig) -> CoreResult<()> {
         });
     }
 
-    let common_config = cfg.cwd.join("config/common.config");
+    let common_config = paths::common_config(cfg);
     let common_config_present = common_config.exists();
 
     if common_config_present && !common_config.is_file() {
@@ -125,10 +117,7 @@ pub fn generate_config(cfg: &ResolvedConfig) -> CoreResult<()> {
         });
     }
 
-    let config_overlay = cfg
-        .cwd
-        .join("config")
-        .join(format!("{}.overlay", cfg.profile));
+    let config_overlay = paths::config_overlay(cfg, &cfg.profile);
     let config_overlay_present = config_overlay.exists();
 
     if config_overlay_present && !config_overlay.is_file() {
@@ -170,7 +159,7 @@ pub fn generate_config(cfg: &ResolvedConfig) -> CoreResult<()> {
     }
 
     if !config_present {
-        fs::create_dir_all(cfg.workspace_root.join("configs").join(&cfg.profile))?;
+        fs::create_dir_all(paths::generated_config_dir(cfg, &cfg.profile))?;
         fs::write(config_path, config)?;
     }
 
@@ -184,8 +173,8 @@ pub fn generate_config(cfg: &ResolvedConfig) -> CoreResult<()> {
 /// - target path already present and is not a symlink,
 /// - underlying I/O operation fails.
 pub fn link_config(cfg: &ResolvedConfig) -> CoreResult<()> {
-    let config_dir = cfg.workspace_root.join("configs").join(&cfg.profile);
-    let link_path = board_config_dir_root(cfg).join(&cfg.profile);
+    let config_dir = paths::generated_config_dir(cfg, &cfg.profile);
+    let link_path = paths::board_config_link(cfg, &cfg.profile);
     let config_present = link_path.exists();
 
     if config_present && !link_path.is_symlink() {
@@ -209,15 +198,7 @@ pub fn unlink_config(
     profile: Option<&ProfileConfig>,
 ) -> CoreResult<()> {
     if let Some(profile) = profile {
-        let config_link = cfg
-            .workspace_root
-            .join("nuttx")
-            .join("boards")
-            .join(&profile.arch)
-            .join(&profile.family)
-            .join(&profile.board)
-            .join("configs")
-            .join(profile_name);
+        let config_link = paths::board_config_link_for_profile(cfg, profile_name, profile);
 
         if config_link.exists() {
             remove_symlink_auto(config_link)?;
@@ -297,17 +278,6 @@ fn repo_check(name: &str, workspace_root: &Path) -> CoreResult<()> {
     }
 
     Ok(())
-}
-
-/// Returns the root config dir for the board selected by profile.
-fn board_config_dir_root(cfg: &ResolvedConfig) -> PathBuf {
-    cfg.workspace_root
-        .join("nuttx")
-        .join("boards")
-        .join(&cfg.arch)
-        .join(&cfg.family)
-        .join(&cfg.board)
-        .join("configs")
 }
 
 /// Pushes a &str to a String.
