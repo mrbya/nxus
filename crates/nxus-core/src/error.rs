@@ -81,6 +81,13 @@ pub enum CoreError {
         path: PathBuf,
     },
 
+    /// Selected path is not a git repository.
+    #[error("`{path}` is not a git repository")]
+    PathNotRepo {
+        /// Selected path.
+        path: PathBuf,
+    },
+
     /// `nuttx` repo clone is missing in workspace.
     #[error(
         "`{name}` clone missing in `{workspace_root}`, make sure you have initialized nxus \
@@ -90,6 +97,13 @@ pub enum CoreError {
         /// Workspace clone repo name.
         name: String,
         /// Nxus project-local workspace root.
+        workspace_root: PathBuf,
+    },
+
+    /// project-local workspace not initialized.
+    #[error("workspace at `{workspace_root}` not initialized")]
+    WorkspaceNotInitialized {
+        /// Workspace root dir.
         workspace_root: PathBuf,
     },
 
