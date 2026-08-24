@@ -1,7 +1,7 @@
 use std::fs;
 use std::process::ExitCode;
 
-use nxus_core::{unlink_app, unlink_config, ResolvedConfig};
+use nxus_core::{ResolvedConfig, unlink_app, unlink_config};
 
 /// Nxus command: clean
 pub fn clean(cfg: &ResolvedConfig) -> ExitCode {

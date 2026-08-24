@@ -1,9 +1,11 @@
 use std::process::ExitCode;
 
-use clap::{Parser, Subcommand};
-use nxus_core::{discover_config, load_config, ResolvedConfig};
+use clap::{Args, Parser, Subcommand};
+use nxus_core::{ResolvedConfig, discover_config, load_config};
 
-use crate::commands::{build, clean, config, menuconfig, profiles, run_binary, sim};
+use crate::commands::{
+    build, clean, config, menuconfig, profiles, run_binary, sim, test, workspace,
+};
 
 /// `nxus` CLI parser.
 #[derive(Debug, Parser)]
@@ -80,7 +82,7 @@ pub enum Command {
 
     /// Project-local `NuttX` workspace management.
     #[command(alias = "ws")]
-    Workspace,
+    Workspace(WsArgs),
 
     /// Initializes `NuttX` project with `nxus.toml`.
     #[command(alias = "i")]
@@ -89,6 +91,30 @@ pub enum Command {
     /// Lists available profiles.
     #[command(alias = "p")]
     Profiles,
+}
+
+/// Workspace command args.
+#[derive(Args, Debug)]
+pub struct WsArgs {
+    /// Workspace management subcommand.
+    #[command(subcommand)]
+    pub command: WsCommand,
+}
+
+/// Workspace subcommands.
+#[derive(Debug, Subcommand)]
+pub enum WsCommand {
+    /// Clean workspace.
+    #[command(alias = "c")]
+    Clean,
+
+    /// Initialize workspace.
+    #[command(alias = "i")]
+    Init,
+
+    /// Prune workspace.
+    #[command(alias = "p")]
+    Prune,
 }
 
 /// Runs `nxus` CLI.
@@ -132,9 +158,11 @@ pub fn run() -> ExitCode {
         Command::Clean => clean(&resolved),
         Command::Config => config(&resolved),
         Command::Build => build(&resolved),
+        Command::Menuconfig => menuconfig(&resolved),
         Command::Run => run_binary(&resolved),
         Command::Sim => sim(&resolved),
-        Command::Menuconfig => menuconfig(&resolved),
+        Command::Test => test(&resolved),
+        Command::Workspace(args) => workspace(&resolved, &args),
         _ => ExitCode::FAILURE,
     }
 }

@@ -1,6 +1,6 @@
 use std::process::ExitCode;
 
-use nxus_core::{paths, Cmd, CoreError, ResolvedConfig, Runner};
+use nxus_core::{Cmd, CoreError, ResolvedConfig, Runner, paths};
 
 use crate::commands::config;
 

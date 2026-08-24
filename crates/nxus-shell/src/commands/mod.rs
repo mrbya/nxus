@@ -11,6 +11,8 @@ pub mod clean;
 pub mod config;
 /// Flashes project binary built for a profile.
 pub mod flash;
+/// Initializes project with `kaze.toml`.
+pub mod init;
 /// Opens menuconfig for a specific profile.
 pub mod menuconfig;
 /// Liests profiles configured for project.
@@ -21,6 +23,8 @@ pub mod run;
 pub mod sim;
 /// Runs project tests.
 pub mod test;
+/// Manages project-local nuttx workspace .
+pub mod workspace;
 
 // Command re-exports for cli parser,
 pub use build::build;
@@ -30,3 +34,5 @@ pub use menuconfig::menuconfig;
 pub use profiles::profiles;
 pub use run::run_binary;
 pub use sim::sim;
+pub use test::test;
+pub use workspace::workspace;

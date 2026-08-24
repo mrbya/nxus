@@ -1,6 +1,9 @@
+use std::fs;
 use std::process::ExitCode;
 
-use nxus_core::{Cmd, ResolvedConfig, ensure_workspace, generate_config, link_app, link_config};
+use nxus_core::{
+    Cmd, CoreError, ResolvedConfig, ensure_workspace, generate_config, link_app, link_config, paths,
+};
 
 /// Nxus command: config.
 pub fn config(cfg: &ResolvedConfig) -> ExitCode {
@@ -26,11 +29,24 @@ pub fn config(cfg: &ResolvedConfig) -> ExitCode {
         return ExitCode::FAILURE;
     }
 
+    let build_dir = paths::build_dir(cfg, &cfg.profile);
+    let build_dir_present = build_dir.exists();
+
+    if build_dir_present && !build_dir.is_dir() {
+        eprintln!("{}", CoreError::PathNotDir { path: build_dir });
+        return ExitCode::FAILURE;
+    }
+
+    if !build_dir_present && let Err(error) = fs::create_dir_all(&build_dir) {
+        eprintln!("{}", CoreError::Io(error));
+        return ExitCode::FAILURE;
+    }
+
     let cmd = Cmd::new("cmake")
         .arg("-S")
         .arg(cfg.workspace_root.join("nuttx"))
         .arg("-B")
-        .arg(&cfg.build_dir)
+        .arg(&build_dir)
         .arg("-GNinja")
         .arg(format!("-DBOARD_CONFIG={}:{}", cfg.board, cfg.profile))
         .arg(format!(
