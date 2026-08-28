@@ -64,3 +64,60 @@ pub fn config(cfg: &ResolvedConfig) -> ExitCode {
 
     ExitCode::SUCCESS
 }
+
+#[cfg(test)]
+mod tests {
+    use std::fs;
+    use std::process::ExitCode;
+
+    use nxus_core::paths;
+
+    use crate::commands::config;
+    use crate::tests::resolved_config;
+
+    #[test]
+    fn config_fails_when_build_dir_is_a_file() {
+        let temp_dir = tempfile::TempDir::new().expect("tempdir should be created");
+        let cfg = resolved_config(temp_dir.path());
+
+        fs::create_dir_all(paths::nuttx(&cfg)).expect("nuttx dir should be created");
+        fs::create_dir_all(paths::nuttx_apps(&cfg)).expect("nuttx-apps dir should be created");
+        fs::create_dir_all(
+            paths::board_config_base(&cfg)
+                .parent()
+                .expect("board parent should exist"),
+        )
+        .expect("board config dir should be created");
+        fs::write(paths::board_config_base(&cfg), "CONFIG_BASE=y\n")
+            .expect("base config should be created");
+        fs::create_dir_all(cfg.build_dir.parent().expect("build parent should exist"))
+            .expect("build parent should be created");
+        fs::write(&cfg.build_dir, "file").expect("build path file should be created");
+
+        assert_eq!(config(&cfg), ExitCode::FAILURE);
+    }
+
+    #[test]
+    fn config_sets_up_workspace_links_and_build_dir_in_dry_run() {
+        let temp_dir = tempfile::TempDir::new().expect("tempdir should be created");
+        let cfg = resolved_config(temp_dir.path());
+
+        fs::create_dir_all(&cfg.cwd).expect("cwd should be created");
+        fs::create_dir_all(paths::nuttx(&cfg)).expect("nuttx dir should be created");
+        fs::create_dir_all(paths::nuttx_apps(&cfg)).expect("nuttx-apps dir should be created");
+        fs::create_dir_all(
+            paths::board_config_base(&cfg)
+                .parent()
+                .expect("board parent should exist"),
+        )
+        .expect("board config dir should be created");
+        fs::write(paths::board_config_base(&cfg), "CONFIG_BASE=y\n")
+            .expect("base config should be created");
+
+        assert_eq!(config(&cfg), ExitCode::SUCCESS);
+        assert!(cfg.build_dir.exists());
+        assert!(paths::app_link(&cfg).is_symlink());
+        assert!(paths::board_config_link(&cfg, &cfg.profile).is_symlink());
+        assert!(paths::generated_config_file(&cfg, &cfg.profile).is_file());
+    }
+}

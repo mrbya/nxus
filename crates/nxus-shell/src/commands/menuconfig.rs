@@ -31,3 +31,34 @@ pub fn menuconfig(cfg: &ResolvedConfig) -> ExitCode {
 
     ExitCode::SUCCESS
 }
+
+#[cfg(test)]
+mod tests {
+    use std::fs;
+    use std::process::ExitCode;
+
+    use crate::commands::menuconfig;
+    use crate::tests::resolved_config;
+
+    #[test]
+    fn menuconfig_fails_when_build_dir_is_a_file() {
+        let temp_dir = tempfile::TempDir::new().expect("tempdir should be created");
+        let cfg = resolved_config(temp_dir.path());
+
+        fs::create_dir_all(cfg.build_dir.parent().expect("build parent should exist"))
+            .expect("build parent should be created");
+        fs::write(&cfg.build_dir, "file").expect("build path file should be created");
+
+        assert_eq!(menuconfig(&cfg), ExitCode::FAILURE);
+    }
+
+    #[test]
+    fn menuconfig_succeeds_in_dry_run_when_build_dir_exists() {
+        let temp_dir = tempfile::TempDir::new().expect("tempdir should be created");
+        let cfg = resolved_config(temp_dir.path());
+
+        fs::create_dir_all(&cfg.build_dir).expect("build dir should be created");
+
+        assert_eq!(menuconfig(&cfg), ExitCode::SUCCESS);
+    }
+}

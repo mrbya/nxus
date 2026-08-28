@@ -113,3 +113,86 @@ pub fn board_config_link_for_profile(
 ) -> PathBuf {
     board_config_root_for_profile(cfg, profile).join(profile_name)
 }
+
+#[cfg(test)]
+mod tests {
+    use std::path::PathBuf;
+
+    use crate::paths;
+    use crate::tests::{profile_config, resolved_config};
+
+    #[test]
+    fn path_helpers_resolve_expected_locations() {
+        let cfg = resolved_config(PathBuf::from("/tmp/project").as_path());
+        let prod = profile_config("rv32", "esp32", "devkit", "release");
+
+        assert_eq!(
+            paths::nuttx(&cfg),
+            PathBuf::from("/tmp/project/workspace-root/nuttx")
+        );
+        assert_eq!(
+            paths::nuttx_apps(&cfg),
+            PathBuf::from("/tmp/project/workspace-root/nuttx-apps")
+        );
+        assert_eq!(
+            paths::app_link(&cfg),
+            PathBuf::from("/tmp/project/workspace-root/nuttx-apps/external")
+        );
+        assert_eq!(
+            paths::build_root(&cfg),
+            PathBuf::from("/tmp/project/build-root")
+        );
+        assert_eq!(
+            paths::build_dir(&cfg, "sim"),
+            PathBuf::from("/tmp/project/build-root/sim")
+        );
+        assert_eq!(
+            paths::generated_configs_root(&cfg),
+            PathBuf::from("/tmp/project/workspace-root/config")
+        );
+        assert_eq!(
+            paths::generated_config_dir(&cfg, "sim"),
+            PathBuf::from("/tmp/project/workspace-root/config/sim")
+        );
+        assert_eq!(
+            paths::generated_config_file(&cfg, "sim"),
+            PathBuf::from("/tmp/project/workspace-root/config/sim/defconfig")
+        );
+        assert_eq!(
+            paths::config_root(&cfg),
+            PathBuf::from("/tmp/project/app/config")
+        );
+        assert_eq!(
+            paths::common_config(&cfg),
+            PathBuf::from("/tmp/project/app/config/common.config")
+        );
+        assert_eq!(
+            paths::config_overlay(&cfg, "sim"),
+            PathBuf::from("/tmp/project/app/config/sim.overlay")
+        );
+        assert_eq!(
+            paths::board_config_root(&cfg),
+            PathBuf::from("/tmp/project/workspace-root/nuttx/boards/arch/family/board/configs")
+        );
+        assert_eq!(
+            paths::board_config_base(&cfg),
+            PathBuf::from(
+                "/tmp/project/workspace-root/nuttx/boards/arch/family/board/configs/base/defconfig"
+            )
+        );
+        assert_eq!(
+            paths::board_config_link(&cfg, "sim"),
+            PathBuf::from("/tmp/project/workspace-root/nuttx/boards/arch/family/board/configs/sim")
+        );
+        assert_eq!(
+            paths::board_config_root_for_profile(&cfg, &prod),
+            PathBuf::from("/tmp/project/workspace-root/nuttx/boards/rv32/esp32/devkit/configs")
+        );
+        assert_eq!(
+            paths::board_config_link_for_profile(&cfg, "prod", &prod),
+            PathBuf::from(
+                "/tmp/project/workspace-root/nuttx/boards/rv32/esp32/devkit/configs/prod"
+            )
+        );
+    }
+}

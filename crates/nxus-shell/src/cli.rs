@@ -166,3 +166,41 @@ pub fn run() -> ExitCode {
         _ => ExitCode::FAILURE,
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use clap::Parser;
+
+    use crate::cli::{Cli, Command, WsCommand};
+
+    #[test]
+    fn parse_build_command_with_global_flags() {
+        let cli = Cli::try_parse_from(["nxus", "-c", "-vv", "-d", "-p", "prod", "build"])
+            .expect("cli should parse");
+
+        assert!(cli.clean);
+        assert_eq!(cli.verbose, 2);
+        assert!(cli.dry_run);
+        assert_eq!(cli.profile, Some(String::from("prod")));
+        assert!(matches!(cli.command, Command::Build));
+    }
+
+    #[test]
+    fn parse_workspace_alias_and_subcommand_alias() {
+        let cli = Cli::try_parse_from(["nxus", "ws", "p"]).expect("cli should parse");
+
+        assert!(matches!(
+            cli.command,
+            Command::Workspace(crate::cli::WsArgs {
+                command: WsCommand::Prune
+            })
+        ));
+    }
+
+    #[test]
+    fn parse_profiles_alias() {
+        let cli = Cli::try_parse_from(["nxus", "p"]).expect("cli should parse");
+
+        assert!(matches!(cli.command, Command::Profiles));
+    }
+}

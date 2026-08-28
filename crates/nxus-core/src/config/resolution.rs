@@ -176,3 +176,108 @@ fn select_profile(profile: Option<String>, cfg: &NxusConfig) -> CoreResult<Strin
 
     Ok(selected)
 }
+
+#[cfg(test)]
+mod tests {
+    use std::path::PathBuf;
+
+    use crate::config::{ConfigContext, NxusConfig, ResolvedConfig};
+    use crate::{CoreError, ProfileConfig};
+
+    fn context() -> ConfigContext {
+        ConfigContext {
+            project_dir: PathBuf::from("/tmp/project"),
+            cwd: PathBuf::from("/tmp/project/app"),
+        }
+    }
+
+    #[test]
+    fn resolve_uses_selected_profile_and_overrides() {
+        let mut cfg = NxusConfig::new();
+        cfg.project.default_profile = Some(String::from("prod"));
+        cfg.project.overlay_root = Some(String::from("overlays"));
+        cfg.build.root = Some(String::from("out"));
+        cfg.build.link_compile_commands = Some(false);
+        cfg.workspace.root = Some(String::from("ws"));
+        cfg.workspace.nuttx.src = Some(String::from("nuttx-src"));
+        cfg.workspace.nuttx.rev = Some(String::from("nuttx-rev"));
+        cfg.workspace.nuttx_apps.src = Some(String::from("apps-src"));
+        cfg.workspace.nuttx_apps.rev = Some(String::from("apps-rev"));
+        cfg.profiles.insert(
+            String::from("prod"),
+            ProfileConfig {
+                arch: String::from("arm"),
+                family: String::from("stm32"),
+                board: String::from("nucleo"),
+                config_base: String::from("release"),
+            },
+        );
+
+        let profile = String::from("prod");
+        let resolved = ResolvedConfig::resolve(true, 4, true, &context(), Some(&profile), &cfg)
+            .expect("config should resolve");
+
+        assert!(resolved.clean);
+        assert_eq!(resolved.runner.verbose, 4);
+        assert!(resolved.runner.dry_run);
+        assert!(resolved.profile_selected);
+        assert_eq!(resolved.profile, profile);
+        assert_eq!(resolved.build_root, PathBuf::from("/tmp/project/out"));
+        assert_eq!(resolved.build_dir, PathBuf::from("/tmp/project/out/prod"));
+        assert!(!resolved.link_compile_commands);
+        assert_eq!(resolved.workspace_root, PathBuf::from("/tmp/project/ws"));
+        assert_eq!(resolved.nuttx_src, String::from("nuttx-src"));
+        assert_eq!(resolved.nuttx_rev, Some(String::from("nuttx-rev")));
+        assert_eq!(resolved.nuttx_apps_src, String::from("apps-src"));
+        assert_eq!(resolved.nuttx_apps_rev, Some(String::from("apps-rev")));
+        assert_eq!(resolved.arch, String::from("arm"));
+        assert_eq!(resolved.family, String::from("stm32"));
+        assert_eq!(resolved.board, String::from("nucleo"));
+        assert_eq!(resolved.config_base, String::from("release"));
+        assert_eq!(
+            resolved.config_overlay,
+            PathBuf::from("/tmp/project/overlays/prod.overlay")
+        );
+    }
+
+    #[test]
+    fn resolve_uses_default_profile_when_not_selected() {
+        let cfg = NxusConfig::new();
+
+        let resolved = ResolvedConfig::resolve(false, 2, false, &context(), None, &cfg)
+            .expect("default config should resolve");
+
+        assert!(!resolved.profile_selected);
+        assert_eq!(resolved.profile, String::from("sim"));
+        assert_eq!(resolved.build_dir, PathBuf::from("/tmp/project/build/sim"));
+    }
+
+    #[test]
+    fn resolve_errors_for_unknown_profile() {
+        let cfg = NxusConfig::new();
+        let requested_profile = String::from("missing");
+
+        let error =
+            ResolvedConfig::resolve(false, 0, false, &context(), Some(&requested_profile), &cfg)
+                .expect_err("unknown profile should fail");
+
+        assert!(matches!(
+            error,
+            CoreError::UnknownProfile { profile } if profile == "missing"
+        ));
+    }
+
+    #[test]
+    fn with_profile_marks_profile_as_selected() {
+        let resolved =
+            ResolvedConfig::resolve(false, 1, true, &context(), None, &NxusConfig::new())
+                .expect("default config should resolve");
+
+        let selected = resolved.with_profile("test");
+
+        assert!(selected.profile_selected);
+        assert_eq!(selected.profile, String::from("test"));
+        assert_eq!(selected.build_dir, resolved.build_dir);
+        assert_eq!(selected.workspace_root, resolved.workspace_root);
+    }
+}

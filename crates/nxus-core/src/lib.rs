@@ -83,3 +83,7 @@ pub use exec::{Cmd, Runner};
 pub use workspace::{
     ensure_workspace, generate_config, link_app, link_config, unlink_app, unlink_config,
 };
+
+// Tests
+#[cfg(test)]
+mod tests;

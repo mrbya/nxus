@@ -403,6 +403,147 @@ fn shellish(s: &OsStr) -> String {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use std::ffi::OsString;
+    use std::os::unix::process::ExitStatusExt;
+    use std::path::PathBuf;
+
+    use super::{Cmd, Runner, pretty_cmd, reset_terminal_colors, shellish, write_raw_bytes};
+    use crate::CoreError;
+
+    #[test]
+    fn cmd_builder_sets_expected_fields() {
+        let cmd = Cmd::new("tool")
+            .arg("one")
+            .args(["two", "three"])
+            .cwd("dir")
+            .env("KEY", "VALUE");
+
+        assert_eq!(cmd.program, OsString::from("tool"));
+        assert_eq!(
+            cmd.args,
+            vec![
+                OsString::from("one"),
+                OsString::from("two"),
+                OsString::from("three")
+            ]
+        );
+        assert_eq!(cmd.cwd, Some(PathBuf::from("dir")));
+        assert_eq!(
+            cmd.env,
+            vec![(OsString::from("KEY"), OsString::from("VALUE"))]
+        );
+    }
+
+    #[test]
+    fn shellish_quotes_whitespace_only_when_needed() {
+        assert_eq!(
+            shellish(OsString::from("simple").as_os_str()),
+            String::from("simple")
+        );
+        assert_eq!(
+            shellish(OsString::from("has space").as_os_str()),
+            String::from("\"has space\"")
+        );
+    }
+
+    #[test]
+    fn pretty_cmd_formats_cwd_and_args() {
+        let cmd = Cmd::new("tool")
+            .arg("first arg")
+            .arg("two")
+            .cwd("/tmp/my dir");
+
+        assert_eq!(
+            pretty_cmd(&cmd.program, &cmd.args, cmd.cwd.as_deref()),
+            String::from("(cd /tmp/my dir && tool \"first arg\" two)")
+        );
+    }
+
+    #[test]
+    fn runner_dry_run_skips_missing_command() {
+        let runner = Runner {
+            verbose: 1,
+            dry_run: true,
+        };
+
+        runner
+            .run(&Cmd::new("definitely-does-not-exist"), "dry-run")
+            .expect("dry run should not spawn a process");
+    }
+
+    #[test]
+    fn runner_returns_io_error_when_spawn_fails() {
+        let runner = Runner {
+            verbose: 0,
+            dry_run: false,
+        };
+
+        let error = runner
+            .run(&Cmd::new("definitely-does-not-exist"), "spawn")
+            .expect_err("missing command should fail");
+
+        assert!(matches!(error, CoreError::Io(_)));
+    }
+
+    #[test]
+    fn runner_succeeds_for_quiet_and_verbose_modes() {
+        for verbose in [0, 2, 3] {
+            Runner {
+                verbose,
+                dry_run: false,
+            }
+            .run(&Cmd::new("sh").args(["-c", "exit 0"]), "success")
+            .expect("command should succeed");
+        }
+    }
+
+    #[test]
+    fn runner_returns_command_failed_for_non_zero_exit() {
+        for verbose in [0, 2, 3] {
+            let error = Runner {
+                verbose,
+                dry_run: false,
+            }
+            .run(
+                &Cmd::new("sh").args(["-c", "echo out; echo err 1>&2; exit 7"]),
+                "failure",
+            )
+            .expect_err("command should fail");
+
+            assert!(matches!(
+                error,
+                CoreError::CommandFailed { status, .. } if status.code() == Some(7)
+            ));
+        }
+    }
+
+    #[test]
+    fn core_error_display_includes_command() {
+        let error = CoreError::CommandFailed {
+            cmd: String::from("tool --bad"),
+            status: std::process::ExitStatus::from_raw(1 << 8),
+        };
+
+        assert!(error.to_string().contains("tool --bad"));
+    }
+
+    #[test]
+    fn write_raw_bytes_writes_all_data() {
+        let mut output = Vec::new();
+
+        write_raw_bytes(&mut output, b"abc").expect("bytes should be written");
+
+        assert_eq!(output, b"abc");
+    }
+
+    #[test]
+    fn reset_terminal_colors_is_best_effort() {
+        reset_terminal_colors();
+    }
+}
+
 //#[cfg(test)]
 //mod tests {
 //    use std::os::unix::process::ExitStatusExt;

@@ -30,3 +30,34 @@ pub fn build(cfg: &ResolvedConfig) -> ExitCode {
 
     ExitCode::SUCCESS
 }
+
+#[cfg(test)]
+mod tests {
+    use std::fs;
+    use std::process::ExitCode;
+
+    use crate::commands::build;
+    use crate::tests::resolved_config;
+
+    #[test]
+    fn build_fails_when_build_dir_is_a_file() {
+        let temp_dir = tempfile::TempDir::new().expect("tempdir should be created");
+        let cfg = resolved_config(temp_dir.path());
+
+        fs::create_dir_all(cfg.build_dir.parent().expect("build parent should exist"))
+            .expect("build parent should be created");
+        fs::write(&cfg.build_dir, "file").expect("build dir placeholder should be created");
+
+        assert_eq!(build(&cfg), ExitCode::FAILURE);
+    }
+
+    #[test]
+    fn build_succeeds_in_dry_run_when_build_dir_exists() {
+        let temp_dir = tempfile::TempDir::new().expect("tempdir should be created");
+        let cfg = resolved_config(temp_dir.path());
+
+        fs::create_dir_all(&cfg.build_dir).expect("build dir should be created");
+
+        assert_eq!(build(&cfg), ExitCode::SUCCESS);
+    }
+}
