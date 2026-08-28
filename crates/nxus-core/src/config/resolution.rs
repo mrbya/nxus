@@ -125,7 +125,7 @@ impl ResolvedConfig {
             .join(format!("{selected}.overlay"));
 
         Ok(Self {
-            cwd: std::env::current_dir()?,
+            cwd: ctx.cwd.clone(),
             clean,
             runner: Runner { verbose, dry_run },
             ctx: ctx.clone(),

@@ -48,6 +48,7 @@ impl NxusConfig {
         config.project.overlay_root = Some(String::from(DEFAULT_OVERLAY_ROOT));
         config.build.root = Some(String::from(DEFAULT_BUILD_ROOT));
         config.build.link_compile_commands = Some(true);
+        config.workspace.root = Some(String::from(DEFAULT_WORKSPACE_ROOT));
         config.workspace.nuttx = WorkspaceComponentConfig::new_nuttx();
         config.workspace.nuttx_apps = WorkspaceComponentConfig::new_nuttx_apps();
 
@@ -295,5 +296,103 @@ impl ProfileConfig {
     pub fn overlay(mut self, rhs: Self) -> Self {
         self = rhs;
         self
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::config::schema::{
+        BuildConfig, ProjectConfig, WorkspaceComponentConfig, WorkspaceConfig,
+    };
+    use crate::config::{
+        DEFAULT_BUILD_ROOT, DEFAULT_NUTTX_SRC, DEFAULT_PROJECT_DEFAULT_PROFILE,
+        DEFAULT_WORKSPACE_ROOT,
+    };
+    use crate::{NxusConfig, ProfileConfig};
+
+    #[test]
+    fn default_config_contains_default_values() {
+        let cfg = NxusConfig::new();
+        assert_eq!(
+            cfg.project.default_profile,
+            Some(String::from(DEFAULT_PROJECT_DEFAULT_PROFILE))
+        );
+        assert_eq!(cfg.build.root, Some(String::from(DEFAULT_BUILD_ROOT)));
+        assert_eq!(
+            cfg.workspace.root,
+            Some(String::from(DEFAULT_WORKSPACE_ROOT))
+        );
+        assert_eq!(
+            cfg.workspace.nuttx.src,
+            Some(String::from(DEFAULT_NUTTX_SRC))
+        );
+
+        assert_eq!(
+            cfg.profiles
+                .get("sim")
+                .expect("cfg should contain sim profile")
+                .board,
+            String::from("sim")
+        );
+
+        assert_eq!(
+            cfg.profiles
+                .get("test")
+                .expect("cfg should contain sim profile")
+                .board,
+            String::from("sim")
+        );
+    }
+
+    #[test]
+    fn nxus_cfg_overlay_prefers_rhs() {
+        let lhs = NxusConfig::new();
+        let mut rhs = NxusConfig {
+            project: ProjectConfig {
+                default_profile: Some(String::from("right")),
+                overlay_root: None,
+            },
+            build: BuildConfig {
+                root: Some(String::from("right")),
+                link_compile_commands: Some(false),
+            },
+            workspace: WorkspaceConfig {
+                root: Some(String::from("right")),
+                nuttx: WorkspaceComponentConfig {
+                    src: Some(String::from("right")),
+                    rev: Some(String::from("v0.0.0")),
+                },
+                nuttx_apps: WorkspaceComponentConfig {
+                    src: None,
+                    rev: None,
+                },
+            },
+            ..Default::default()
+        };
+
+        rhs.profiles.insert(
+            String::from("sim"),
+            ProfileConfig {
+                arch: String::from("arch"),
+                family: String::from("family"),
+                board: String::from("board"),
+                config_base: String::from("base"),
+            },
+        );
+
+        let merged = lhs.overlay(rhs);
+        assert_eq!(merged.project.default_profile, Some(String::from("right")));
+        assert_eq!(merged.build.root, Some(String::from("right")));
+        assert_eq!(merged.workspace.nuttx.src, Some(String::from("right")));
+        assert_eq!(merged.workspace.nuttx.rev, Some(String::from("v0.0.0")));
+
+        let merged_sim = merged
+            .profiles
+            .get("sim")
+            .expect("should contain sim profile");
+        assert_eq!(merged_sim.arch, String::from("arch"));
+        assert_eq!(merged_sim.family, String::from("family"));
+        assert_eq!(merged_sim.board, String::from("board"));
+        assert_eq!(merged_sim.config_base, String::from("base"));
     }
 }
