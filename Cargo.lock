@@ -499,6 +499,7 @@ dependencies = [
  "nxus-shell",
  "predicates",
  "pretty_assertions",
+ "tempfile",
 ]
 
 [[package]]

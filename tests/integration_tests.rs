@@ -1,1 +1,470 @@
+use std::fs;
+use std::os::unix::fs as unix_fs;
+use std::path::{Path, PathBuf};
 
+use assert_cmd::Command;
+use predicates::prelude::*;
+use tempfile::TempDir;
+
+const NXUS_CONFIG: &str = r#"[project]
+default_profile = "sim"
+
+[build]
+root = "build"
+link_compile_commands = true
+
+[workspace]
+root = "workspace"
+
+[workspace.nuttx]
+
+[workspace.nuttx_apps]
+
+[profile.sim]
+arch = "sim"
+family = "sim"
+board = "sim"
+config_base = "nsh"
+
+[profile.test]
+arch = "sim"
+family = "sim"
+board = "sim"
+config_base = "tests"
+
+[profile.prod]
+arch = "arm"
+family = "stm32f7"
+board = "nucleo-f767zi"
+config_base = "evalos"
+"#;
+
+struct ProjectFixture {
+    _temp_dir: TempDir,
+    project_dir: PathBuf,
+    app_dir: PathBuf,
+    nested_dir: PathBuf,
+}
+
+impl ProjectFixture {
+    fn new() -> Self {
+        let temp_dir = TempDir::new().expect("tempdir should be created");
+        let project_dir = temp_dir.path().join("project");
+        let app_dir = project_dir.join("app");
+        let nested_dir = app_dir.join("src").join("module");
+
+        fs::create_dir_all(&nested_dir).expect("nested app directory should be created");
+        write_file(&project_dir.join("nxus.toml"), NXUS_CONFIG);
+
+        Self {
+            _temp_dir: temp_dir,
+            project_dir,
+            app_dir,
+            nested_dir,
+        }
+    }
+
+    fn command(&self) -> Command {
+        let mut command = Command::cargo_bin("nxus").expect("nxus binary should build");
+        command.current_dir(&self.app_dir);
+        command
+    }
+
+    fn command_from_nested_dir(&self) -> Command {
+        let mut command = Command::cargo_bin("nxus").expect("nxus binary should build");
+        command.current_dir(&self.nested_dir);
+        command
+    }
+
+    fn write_app_config(&self, name: &str, content: &str) {
+        write_file(&self.app_dir.join("config").join(name), content);
+    }
+
+    fn build_dir(&self, profile: &str) -> PathBuf {
+        self.project_dir.join("build").join(profile)
+    }
+
+    fn workspace_root(&self) -> PathBuf {
+        self.project_dir.join("workspace")
+    }
+
+    fn nuttx_dir(&self) -> PathBuf {
+        self.workspace_root().join("nuttx")
+    }
+
+    fn nuttx_apps_dir(&self) -> PathBuf {
+        self.workspace_root().join("nuttx-apps")
+    }
+
+    fn app_link(&self) -> PathBuf {
+        self.nuttx_apps_dir().join("external")
+    }
+
+    fn generated_config_dir(&self, profile: &str) -> PathBuf {
+        self.workspace_root().join("config").join(profile)
+    }
+
+    fn generated_config_file(&self, profile: &str) -> PathBuf {
+        self.generated_config_dir(profile).join("defconfig")
+    }
+
+    fn board_config_root(&self, arch: &str, family: &str, board: &str) -> PathBuf {
+        self.nuttx_dir()
+            .join("boards")
+            .join(arch)
+            .join(family)
+            .join(board)
+            .join("configs")
+    }
+
+    fn board_config_base(
+        &self,
+        arch: &str,
+        family: &str,
+        board: &str,
+        config_base: &str,
+    ) -> PathBuf {
+        self.board_config_root(arch, family, board)
+            .join(config_base)
+            .join("defconfig")
+    }
+
+    fn board_config_link(&self, arch: &str, family: &str, board: &str, profile: &str) -> PathBuf {
+        self.board_config_root(arch, family, board).join(profile)
+    }
+
+    fn prepare_workspace_repos(&self) {
+        fs::create_dir_all(self.nuttx_dir()).expect("nuttx dir should be created");
+        fs::create_dir_all(self.nuttx_apps_dir()).expect("nuttx-apps dir should be created");
+    }
+
+    fn prepare_board_configs(&self) {
+        write_file(
+            &self.board_config_base("sim", "sim", "sim", "nsh"),
+            "CONFIG_SIM=y\n",
+        );
+        write_file(
+            &self.board_config_base("sim", "sim", "sim", "tests"),
+            "CONFIG_TEST=y\n",
+        );
+        write_file(
+            &self.board_config_base("arm", "stm32f7", "nucleo-f767zi", "evalos"),
+            "CONFIG_PROD=y\n",
+        );
+    }
+
+    fn prepare_config_inputs(&self) {
+        self.write_app_config("common.config", "CONFIG_COMMON=y\n");
+        self.write_app_config("sim.overlay", "CONFIG_SIM_OVERLAY=y\n");
+        self.write_app_config("test.overlay", "CONFIG_TEST_OVERLAY=y\n");
+        self.write_app_config("prod.overlay", "CONFIG_PROD_OVERLAY=y\n");
+    }
+
+    fn prepare_config_command(&self) {
+        self.prepare_workspace_repos();
+        self.prepare_board_configs();
+        self.prepare_config_inputs();
+    }
+
+    fn prepare_app_link(&self) {
+        fs::create_dir_all(
+            self.app_link()
+                .parent()
+                .expect("app link parent should exist"),
+        )
+        .expect("app link parent should be created");
+        unix_fs::symlink(&self.app_dir, self.app_link()).expect("app link should be created");
+    }
+
+    fn prepare_profile_link(&self, arch: &str, family: &str, board: &str, profile: &str) {
+        let link_path = self.board_config_link(arch, family, board, profile);
+        let target = self.generated_config_dir(profile);
+
+        fs::create_dir_all(&target).expect("generated config dir should be created");
+        fs::create_dir_all(link_path.parent().expect("link parent should exist"))
+            .expect("link parent should be created");
+        unix_fs::symlink(target, link_path).expect("profile link should be created");
+    }
+
+    fn prepare_workspace_prune(&self) {
+        self.prepare_workspace_repos();
+        fs::create_dir_all(self.nuttx_dir().join(".git")).expect("nuttx git dir should exist");
+        fs::create_dir_all(self.nuttx_apps_dir().join(".git"))
+            .expect("nuttx-apps git dir should exist");
+        self.prepare_app_link();
+        self.prepare_profile_link("sim", "sim", "sim", "sim");
+        self.prepare_profile_link("sim", "sim", "sim", "test");
+        self.prepare_profile_link("arm", "stm32f7", "nucleo-f767zi", "prod");
+    }
+}
+
+fn write_file(path: &Path, content: &str) {
+    fs::create_dir_all(path.parent().expect("file parent should exist"))
+        .expect("file parent should be created");
+    fs::write(path, content).expect("file should be written");
+}
+
+#[test]
+fn profiles_lists_profiles_when_invoked_from_nested_directory() {
+    let fixture = ProjectFixture::new();
+
+    fixture
+        .command_from_nested_dir()
+        .arg("profiles")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("Profile"))
+        .stdout(predicate::str::contains("sim"))
+        .stdout(predicate::str::contains("prod"));
+}
+
+#[test]
+fn missing_config_fails_with_clear_error() {
+    let temp_dir = TempDir::new().expect("tempdir should be created");
+
+    let mut command = Command::cargo_bin("nxus").expect("nxus binary should build");
+    command.current_dir(temp_dir.path());
+
+    command
+        .arg("profiles")
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("`nxus.toml` config not found"));
+}
+
+#[test]
+fn invalid_config_fails_with_parse_error() {
+    let fixture = ProjectFixture::new();
+    write_file(&fixture.project_dir.join("nxus.toml"), "not = [\n");
+
+    fixture
+        .command()
+        .arg("profiles")
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("failed to parse config file"));
+}
+
+#[test]
+fn unknown_profile_fails_during_resolution() {
+    let fixture = ProjectFixture::new();
+
+    fixture
+        .command()
+        .args(["-p", "missing", "profiles"])
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("unknown profile: `missing`"));
+}
+
+#[test]
+fn clean_without_explicit_profile_removes_workspace_links_and_build_root() {
+    let fixture = ProjectFixture::new();
+
+    fs::create_dir_all(fixture.build_dir("sim")).expect("sim build dir should be created");
+    fs::create_dir_all(fixture.build_dir("prod")).expect("prod build dir should be created");
+    fixture.prepare_workspace_prune();
+
+    fixture.command().arg("clean").assert().success();
+
+    assert!(!fixture.project_dir.join("build").exists());
+    assert!(!fixture.app_link().exists());
+    assert!(
+        !fixture
+            .board_config_link("sim", "sim", "sim", "sim")
+            .exists()
+    );
+    assert!(
+        !fixture
+            .board_config_link("sim", "sim", "sim", "test")
+            .exists()
+    );
+    assert!(
+        !fixture
+            .board_config_link("arm", "stm32f7", "nucleo-f767zi", "prod")
+            .exists()
+    );
+}
+
+#[test]
+fn clean_alias_with_explicit_profile_removes_only_selected_build_dir() {
+    let fixture = ProjectFixture::new();
+
+    fs::create_dir_all(fixture.build_dir("sim")).expect("sim build dir should be created");
+    fs::create_dir_all(fixture.build_dir("prod")).expect("prod build dir should be created");
+    fixture.prepare_profile_link("sim", "sim", "sim", "sim");
+
+    fixture
+        .command()
+        .args(["-p", "sim", "c"])
+        .assert()
+        .success();
+
+    assert!(!fixture.build_dir("sim").exists());
+    assert!(fixture.build_dir("prod").exists());
+    assert!(
+        !fixture
+            .board_config_link("sim", "sim", "sim", "sim")
+            .exists()
+    );
+}
+
+#[test]
+fn config_creates_links_generated_config_and_build_dir() {
+    let fixture = ProjectFixture::new();
+    fixture.prepare_config_command();
+
+    fixture
+        .command()
+        .args(["-d", "-p", "prod", "config"])
+        .assert()
+        .success();
+
+    assert!(fixture.build_dir("prod").exists());
+    assert!(fixture.app_link().exists());
+    assert!(fixture.generated_config_file("prod").is_file());
+    assert!(
+        fixture
+            .board_config_link("arm", "stm32f7", "nucleo-f767zi", "prod")
+            .exists()
+    );
+}
+
+#[test]
+fn build_alias_honors_global_flags_and_prints_ninja_command() {
+    let fixture = ProjectFixture::new();
+
+    fs::create_dir_all(fixture.build_dir("prod")).expect("prod build dir should be created");
+
+    fixture
+        .command()
+        .args(["-d", "-vvv", "-p", "prod", "b"])
+        .assert()
+        .success()
+        .stderr(predicate::str::contains("ninja -C"))
+        .stderr(predicate::str::contains("build/prod"));
+}
+
+#[test]
+fn build_fails_when_build_path_is_a_file() {
+    let fixture = ProjectFixture::new();
+
+    write_file(&fixture.build_dir("sim"), "file");
+
+    fixture
+        .command()
+        .arg("build")
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains(
+            "already exists and is not a directory",
+        ));
+}
+
+#[test]
+fn menuconfig_alias_prints_menuconfig_command() {
+    let fixture = ProjectFixture::new();
+
+    fs::create_dir_all(fixture.build_dir("prod")).expect("prod build dir should be created");
+
+    fixture
+        .command()
+        .args(["-d", "-vvv", "-p", "prod", "m"])
+        .assert()
+        .success()
+        .stderr(predicate::str::contains("menuconfig"));
+}
+
+#[test]
+fn run_alias_prints_selected_profile_binary_path() {
+    let fixture = ProjectFixture::new();
+
+    fs::create_dir_all(fixture.build_dir("prod")).expect("prod build dir should be created");
+
+    fixture
+        .command()
+        .args(["-d", "-vvv", "-p", "prod", "r"])
+        .assert()
+        .success()
+        .stderr(predicate::str::contains("build/prod/nuttx"));
+}
+
+#[test]
+fn sim_command_uses_sim_profile_binary_path() {
+    let fixture = ProjectFixture::new();
+
+    fs::create_dir_all(fixture.build_dir("sim")).expect("sim build dir should be created");
+
+    fixture
+        .command()
+        .args(["-d", "-vvv", "sim"])
+        .assert()
+        .success()
+        .stderr(predicate::str::contains("build/sim/nuttx"));
+}
+
+#[test]
+fn test_alias_uses_test_profile_binary_path() {
+    let fixture = ProjectFixture::new();
+
+    fs::create_dir_all(fixture.build_dir("test")).expect("test build dir should be created");
+
+    fixture
+        .command()
+        .args(["-d", "-vvv", "t"])
+        .assert()
+        .success()
+        .stderr(predicate::str::contains("build/test/nuttx"));
+}
+
+#[test]
+fn workspace_init_succeeds_with_existing_repo_directories() {
+    let fixture = ProjectFixture::new();
+    fixture.prepare_workspace_repos();
+
+    fixture
+        .command()
+        .args(["-d", "workspace", "init"])
+        .assert()
+        .success();
+}
+
+#[test]
+fn workspace_clean_alias_removes_workspace_root() {
+    let fixture = ProjectFixture::new();
+
+    fs::create_dir_all(fixture.workspace_root()).expect("workspace root should be created");
+
+    fixture
+        .command()
+        .args(["workspace", "c"])
+        .assert()
+        .success();
+
+    assert!(!fixture.workspace_root().exists());
+}
+
+#[test]
+fn workspace_prune_alias_stashes_and_unlinks() {
+    let fixture = ProjectFixture::new();
+    fixture.prepare_workspace_prune();
+
+    fixture.command().args(["-d", "ws", "p"]).assert().success();
+
+    assert!(!fixture.app_link().exists());
+    assert!(
+        !fixture
+            .board_config_link("sim", "sim", "sim", "sim")
+            .exists()
+    );
+    assert!(
+        !fixture
+            .board_config_link("sim", "sim", "sim", "test")
+            .exists()
+    );
+    assert!(
+        !fixture
+            .board_config_link("arm", "stm32f7", "nucleo-f767zi", "prod")
+            .exists()
+    );
+}
