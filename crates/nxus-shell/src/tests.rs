@@ -1,7 +1,7 @@
 use std::path::{Path, PathBuf};
 
 use indexmap::IndexMap;
-use nxus_core::{ConfigContext, ProfileConfig, ResolvedConfig, Runner};
+use nxus_core::{CommandConfig, ConfigContext, ProfileConfig, ResolvedConfig, Runner};
 
 pub fn profile_config(arch: &str, family: &str, board: &str, config_base: &str) -> ProfileConfig {
     ProfileConfig {
@@ -9,6 +9,14 @@ pub fn profile_config(arch: &str, family: &str, board: &str, config_base: &str) 
         family: String::from(family),
         board: String::from(board),
         config_base: String::from(config_base),
+        flash: None,
+    }
+}
+
+pub fn flash_command(command: &str, args: &[&str]) -> CommandConfig {
+    CommandConfig {
+        command: String::from(command),
+        args: args.iter().map(|arg| String::from(*arg)).collect(),
     }
 }
 
@@ -51,6 +59,7 @@ pub fn resolved_config(project_dir: &Path) -> ResolvedConfig {
         family: profile.family,
         board: profile.board,
         config_base: profile.config_base,
+        flash: None,
         config_overlay: project_dir.join("config").join("sim.overlay"),
     }
 }

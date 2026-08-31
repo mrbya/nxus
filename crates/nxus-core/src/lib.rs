@@ -69,6 +69,10 @@ pub(crate) mod config;
 pub(crate) mod error;
 /// Command executor.
 pub(crate) mod exec;
+/// Flash command resolution.
+pub(crate) mod flash;
+/// Project initialization.
+pub(crate) mod init;
 /// Project-wide path resolution helpers.
 pub mod paths;
 /// Workspace manipulation.
@@ -76,14 +80,17 @@ pub(crate) mod workspace;
 
 // Re-exports.
 pub use config::{
-    ConfigContext, NxusConfig, ProfileConfig, ResolvedConfig, discover_config, load_config,
+    CommandConfig, ConfigContext, NxusConfig, ProfileConfig, ResolvedConfig, discover_config,
+    load_config,
 };
 pub use error::{CoreError, CoreResult};
 pub use exec::{Cmd, Runner};
+pub use flash::resolve_flash_command;
+pub use init::{init_project, init_project_config};
 pub use workspace::{
     ensure_workspace, generate_config, link_app, link_config, unlink_app, unlink_config,
 };
 
-// Tests
+// Test helpers and fixtures.
 #[cfg(test)]
 mod tests;

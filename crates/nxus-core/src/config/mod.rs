@@ -12,6 +12,7 @@ pub use discovery::{ConfigContext, discover_config};
 pub use load::load_config;
 pub use resolution::ResolvedConfig;
 pub use schema::{
-    DEFAULT_BUILD_ROOT, DEFAULT_NUTTX_APPS_SRC, DEFAULT_NUTTX_SRC, DEFAULT_OVERLAY_ROOT,
-    DEFAULT_PROJECT_DEFAULT_PROFILE, DEFAULT_WORKSPACE_ROOT, NxusConfig, ProfileConfig,
+    CommandConfig, DEFAULT_BUILD_ROOT, DEFAULT_NUTTX_APPS_SRC, DEFAULT_NUTTX_SRC,
+    DEFAULT_OVERLAY_ROOT, DEFAULT_PROJECT_DEFAULT_PROFILE, DEFAULT_WORKSPACE_ROOT, NxusConfig,
+    ProfileConfig,
 };

@@ -32,6 +32,24 @@ pub fn build_dir(cfg: &ResolvedConfig, profile: &str) -> PathBuf {
     build_root(cfg).join(profile)
 }
 
+/// Returns path to the standard `NuttX` executable output.
+#[must_use]
+pub fn firmware_elf(cfg: &ResolvedConfig, profile: &str) -> PathBuf {
+    build_dir(cfg, profile).join("nuttx")
+}
+
+/// Returns path to the standard `NuttX` binary output.
+#[must_use]
+pub fn firmware_bin(cfg: &ResolvedConfig, profile: &str) -> PathBuf {
+    build_dir(cfg, profile).join("nuttx.bin")
+}
+
+/// Returns path to the standard `NuttX` Intel HEX output.
+#[must_use]
+pub fn firmware_hex(cfg: &ResolvedConfig, profile: &str) -> PathBuf {
+    build_dir(cfg, profile).join("nuttx.hex")
+}
+
 /// Returns path to generated configs root dir.
 #[must_use]
 pub fn generated_configs_root(cfg: &ResolvedConfig) -> PathBuf {
@@ -145,6 +163,18 @@ mod tests {
         assert_eq!(
             paths::build_dir(&cfg, "sim"),
             PathBuf::from("/tmp/project/build-root/sim")
+        );
+        assert_eq!(
+            paths::firmware_elf(&cfg, "sim"),
+            PathBuf::from("/tmp/project/build-root/sim/nuttx")
+        );
+        assert_eq!(
+            paths::firmware_bin(&cfg, "sim"),
+            PathBuf::from("/tmp/project/build-root/sim/nuttx.bin")
+        );
+        assert_eq!(
+            paths::firmware_hex(&cfg, "sim"),
+            PathBuf::from("/tmp/project/build-root/sim/nuttx.hex")
         );
         assert_eq!(
             paths::generated_configs_root(&cfg),

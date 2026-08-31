@@ -11,7 +11,7 @@ pub mod clean;
 pub mod config;
 /// Flashes project binary built for a profile.
 pub mod flash;
-/// Initializes project with `kaze.toml`.
+/// Initializes a Nxus project or config layout.
 pub mod init;
 /// Opens menuconfig for a specific profile.
 pub mod menuconfig;
@@ -30,6 +30,8 @@ pub mod workspace;
 pub use build::build;
 pub use clean::clean;
 pub use config::config;
+pub use flash::flash;
+pub use init::init;
 pub use menuconfig::menuconfig;
 pub use profiles::profiles;
 pub use run::run_binary;

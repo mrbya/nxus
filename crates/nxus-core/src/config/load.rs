@@ -26,7 +26,7 @@ mod tests {
     use std::path::{Path, PathBuf};
 
     use crate::config::DEFAULT_PROJECT_DEFAULT_PROFILE;
-    use crate::{CoreError, load_config};
+    use crate::{CommandConfig, CoreError, load_config};
 
     fn write_config(dir: &Path) -> PathBuf {
         let file_path = dir.join("nxus.toml");
@@ -97,5 +97,47 @@ config_base = "bar"
             load_config(temp_dir.path()),
             Err(CoreError::ParseConfig { .. })
         ));
+    }
+
+    #[test]
+    fn load_config_parses_structured_flash_command() {
+        let temp_dir = tempfile::TempDir::new().expect("tempdir should be created");
+        fs::write(
+            temp_dir.path().join("nxus.toml"),
+            r#"[workspace.nuttx]
+rev = "master"
+
+[workspace.nuttx_apps]
+rev = "master"
+
+[profile.prod]
+arch = "arm"
+family = "stm32f7"
+board = "nucleo-f767zi"
+config_base = "evalos"
+
+[profile.prod.flash]
+command = "openocd"
+args = ["-c", "program {elf} verify reset exit"]
+"#,
+        )
+        .expect("config file should be created");
+
+        let flash = load_config(temp_dir.path())
+            .expect("config should load")
+            .profiles
+            .get("prod")
+            .and_then(|profile| profile.flash.clone());
+
+        assert_eq!(
+            flash,
+            Some(CommandConfig {
+                command: String::from("openocd"),
+                args: vec![
+                    String::from("-c"),
+                    String::from("program {elf} verify reset exit")
+                ],
+            })
+        );
     }
 }

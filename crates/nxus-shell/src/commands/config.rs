@@ -18,13 +18,11 @@ pub fn config(cfg: &ResolvedConfig) -> ExitCode {
     }
 
     if let Err(error) = generate_config(cfg) {
-        println!("gen");
         eprintln!("{error}");
         return ExitCode::FAILURE;
     }
 
     if let Err(error) = link_config(cfg) {
-        println!("link");
         eprintln!("{error}");
         return ExitCode::FAILURE;
     }

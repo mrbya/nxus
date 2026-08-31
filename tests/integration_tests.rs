@@ -37,6 +37,10 @@ arch = "arm"
 family = "stm32f7"
 board = "nucleo-f767zi"
 config_base = "evalos"
+
+[profile.prod.flash]
+command = "openocd"
+args = ["-f", "board/st_nucleo_f7.cfg", "-c", "program {elf} verify reset exit"]
 "#;
 
 struct ProjectFixture {
@@ -467,4 +471,113 @@ fn workspace_prune_alias_stashes_and_unlinks() {
             .board_config_link("arm", "stm32f7", "nucleo-f767zi", "prod")
             .exists()
     );
+}
+
+#[test]
+fn init_config_succeeds_without_existing_project() {
+    let temp_dir = TempDir::new().expect("tempdir should be created");
+
+    let mut command = Command::cargo_bin("nxus").expect("nxus binary should build");
+    command.current_dir(temp_dir.path());
+
+    command.args(["init", "config"]).assert().success();
+
+    assert!(temp_dir.path().join("nxus.toml").is_file());
+    assert!(temp_dir.path().join("config/common.config").is_file());
+
+    let mut profiles = Command::cargo_bin("nxus").expect("nxus binary should build");
+    profiles.current_dir(temp_dir.path());
+    profiles
+        .arg("profiles")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("sim"))
+        .stdout(predicate::str::contains("test"));
+}
+
+#[test]
+fn init_config_refuses_to_overwrite_existing_config() {
+    let temp_dir = TempDir::new().expect("tempdir should be created");
+    write_file(&temp_dir.path().join("nxus.toml"), "existing\n");
+
+    let mut command = Command::cargo_bin("nxus").expect("nxus binary should build");
+    command.current_dir(temp_dir.path());
+
+    command
+        .args(["init", "config"])
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("refusing to overwrite"));
+}
+
+#[test]
+fn init_project_creates_new_project_scaffold() {
+    let temp_dir = TempDir::new().expect("tempdir should be created");
+
+    let mut command = Command::cargo_bin("nxus").expect("nxus binary should build");
+    command.current_dir(temp_dir.path());
+
+    command.args(["init", "project", "demo"]).assert().success();
+
+    let project_dir = temp_dir.path().join("demo");
+    assert!(project_dir.join("nxus.toml").is_file());
+    assert!(project_dir.join("app/CMakeLists.txt").is_file());
+    assert!(project_dir.join("app/Kconfig").is_file());
+    assert!(project_dir.join("app/config/common.config").is_file());
+
+    let mut profiles = Command::cargo_bin("nxus").expect("nxus binary should build");
+    profiles.current_dir(project_dir.join("app"));
+    profiles
+        .arg("profiles")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("sim"));
+}
+
+#[test]
+fn init_project_refuses_non_empty_destination() {
+    let temp_dir = TempDir::new().expect("tempdir should be created");
+    let project_dir = temp_dir.path().join("demo");
+    fs::create_dir_all(&project_dir).expect("project dir should be created");
+    write_file(&project_dir.join("README.md"), "existing\n");
+
+    let mut command = Command::cargo_bin("nxus").expect("nxus binary should build");
+    command.current_dir(temp_dir.path());
+
+    command
+        .args(["init", "project", "demo"])
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("must be empty"));
+}
+
+#[test]
+fn flash_uses_profile_command_configuration_in_dry_run() {
+    let fixture = ProjectFixture::new();
+
+    fs::create_dir_all(fixture.build_dir("prod")).expect("prod build dir should be created");
+    write_file(&fixture.build_dir("prod").join("nuttx"), "elf\n");
+
+    fixture
+        .command()
+        .args(["-d", "-vvv", "-p", "prod", "flash"])
+        .assert()
+        .success()
+        .stderr(predicate::str::contains("openocd"))
+        .stderr(predicate::str::contains("program"))
+        .stderr(predicate::str::contains("build/prod/nuttx"));
+}
+
+#[test]
+fn flash_fails_when_profile_has_no_flash_configuration() {
+    let fixture = ProjectFixture::new();
+
+    fs::create_dir_all(fixture.build_dir("sim")).expect("sim build dir should be created");
+
+    fixture
+        .command()
+        .args(["-d", "-p", "sim", "flash"])
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("does not define a flash command"));
 }

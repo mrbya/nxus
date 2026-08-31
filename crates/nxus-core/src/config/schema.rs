@@ -245,6 +245,21 @@ pub struct ProfileConfig {
 
     /// Profile target config base.
     pub config_base: String,
+
+    /// Optional flash command for this profile.
+    #[serde(default)]
+    pub flash: Option<CommandConfig>,
+}
+
+/// Structured command configuration loaded from `nxus.toml`.
+#[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
+pub struct CommandConfig {
+    /// Program to execute.
+    pub command: String,
+
+    /// Program arguments.
+    #[serde(default)]
+    pub args: Vec<String>,
 }
 
 /// Default sim profile architecture.
@@ -274,6 +289,7 @@ impl ProfileConfig {
             family: DEFAULT_SIM_FAMILY.into(),
             board: DEFAULT_SIM_BOARD.into(),
             config_base: DEFAULT_SIM_CONFIG_BASE.into(),
+            flash: None,
         }
     }
 
@@ -285,6 +301,7 @@ impl ProfileConfig {
             family: DEFAULT_TEST_FAMILY.into(),
             board: DEFAULT_TEST_BOARD.into(),
             config_base: DEFAULT_TEST_CONFIG_BASE.into(),
+            flash: None,
         }
     }
 
@@ -294,7 +311,15 @@ impl ProfileConfig {
     /// Merged profile config with RHS values taking precedence.
     #[must_use]
     pub fn overlay(mut self, rhs: Self) -> Self {
-        self = rhs;
+        self.arch = rhs.arch;
+        self.family = rhs.family;
+        self.board = rhs.board;
+        self.config_base = rhs.config_base;
+
+        if rhs.flash.is_some() {
+            self.flash = rhs.flash;
+        }
+
         self
     }
 }
@@ -308,7 +333,7 @@ mod tests {
         DEFAULT_BUILD_ROOT, DEFAULT_NUTTX_SRC, DEFAULT_PROJECT_DEFAULT_PROFILE,
         DEFAULT_WORKSPACE_ROOT,
     };
-    use crate::{NxusConfig, ProfileConfig};
+    use crate::{CommandConfig, NxusConfig, ProfileConfig};
 
     #[test]
     fn default_config_contains_default_values() {
@@ -377,6 +402,10 @@ mod tests {
                 family: String::from("family"),
                 board: String::from("board"),
                 config_base: String::from("base"),
+                flash: Some(CommandConfig {
+                    command: String::from("openocd"),
+                    args: vec![String::from("{elf}")],
+                }),
             },
         );
 
@@ -394,5 +423,12 @@ mod tests {
         assert_eq!(merged_sim.family, String::from("family"));
         assert_eq!(merged_sim.board, String::from("board"));
         assert_eq!(merged_sim.config_base, String::from("base"));
+        assert_eq!(
+            merged_sim.flash,
+            Some(CommandConfig {
+                command: String::from("openocd"),
+                args: vec![String::from("{elf}")],
+            })
+        );
     }
 }

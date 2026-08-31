@@ -115,4 +115,41 @@ pub enum CoreError {
         /// Config base.
         config_base: String,
     },
+
+    /// Refusing to overwrite an existing path during initialization.
+    #[error("`{path}` already exists; refusing to overwrite it")]
+    PathAlreadyExists {
+        /// Conflicting existing path.
+        path: PathBuf,
+    },
+
+    /// Initialization target directory must be empty.
+    #[error("`{path}` must be empty before initialization")]
+    DirectoryNotEmpty {
+        /// Non-empty directory path.
+        path: PathBuf,
+    },
+
+    /// Selected profile has no flash command configured.
+    #[error("profile `{profile}` does not define a flash command")]
+    FlashNotConfigured {
+        /// Profile name.
+        profile: String,
+    },
+
+    /// Encountered an unsupported template placeholder.
+    #[error("unknown flash placeholder `{{{placeholder}}}`")]
+    UnknownPlaceholder {
+        /// Placeholder name without braces.
+        placeholder: String,
+    },
+
+    /// A flash template referenced a required artifact that is missing.
+    #[error("required flash artifact `{artifact}` not found at `{path}`")]
+    FlashArtifactMissing {
+        /// Artifact placeholder name.
+        artifact: String,
+        /// Resolved artifact path.
+        path: PathBuf,
+    },
 }

@@ -6,7 +6,7 @@ use crate::config::{
     ConfigContext, DEFAULT_BUILD_ROOT, DEFAULT_NUTTX_APPS_SRC, DEFAULT_NUTTX_SRC,
     DEFAULT_OVERLAY_ROOT, DEFAULT_PROJECT_DEFAULT_PROFILE, DEFAULT_WORKSPACE_ROOT, NxusConfig,
 };
-use crate::{CoreError, CoreResult, ProfileConfig, Runner};
+use crate::{CommandConfig, CoreError, CoreResult, ProfileConfig, Runner};
 
 /// Resolved nxus configuration after parsing and resolving profile.
 #[derive(Debug, Clone)]
@@ -55,6 +55,8 @@ pub struct ResolvedConfig {
     pub board: String,
     /// Profile target config base.
     pub config_base: String,
+    /// Selected profile flash command configuration.
+    pub flash: Option<CommandConfig>,
     /// Config overlay available for selected profile?
     pub config_overlay: PathBuf,
 }
@@ -114,6 +116,7 @@ impl ResolvedConfig {
         let family = profile_cfg.family.clone();
         let board = profile_cfg.board.clone();
         let config_base = profile_cfg.config_base.clone();
+        let flash = profile_cfg.flash.clone();
         let config_overlay = ctx
             .project_dir
             .join(
@@ -144,6 +147,7 @@ impl ResolvedConfig {
             family,
             board,
             config_base,
+            flash,
             config_overlay,
         })
     }
@@ -210,6 +214,7 @@ mod tests {
                 family: String::from("stm32"),
                 board: String::from("nucleo"),
                 config_base: String::from("release"),
+                flash: None,
             },
         );
 
@@ -234,6 +239,7 @@ mod tests {
         assert_eq!(resolved.family, String::from("stm32"));
         assert_eq!(resolved.board, String::from("nucleo"));
         assert_eq!(resolved.config_base, String::from("release"));
+        assert_eq!(resolved.flash, None);
         assert_eq!(
             resolved.config_overlay,
             PathBuf::from("/tmp/project/overlays/prod.overlay")
