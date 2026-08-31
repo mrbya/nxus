@@ -2,7 +2,7 @@ use std::path::PathBuf;
 use std::process::ExitCode;
 
 use clap::{Args, Parser, Subcommand};
-use nxus_core::{discover_config, load_config, ProfileSelection, ResolvedConfig};
+use nxus_core::{ProfileSelection, ResolvedConfig, discover_config, load_config};
 
 use crate::commands::{
     build, clean, config, flash, init, menuconfig, profiles, run_binary, sim, test, workspace,

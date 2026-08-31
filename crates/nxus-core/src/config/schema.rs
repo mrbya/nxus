@@ -30,13 +30,17 @@ pub const DEFAULT_BUILD_ROOT: &str = "build";
 /// Default workspace `root` value.
 pub const DEFAULT_WORKSPACE_ROOT: &str = "workspace";
 /// Sim profile name.
-const SIM_PROFILE_NAME: &str = "sim";
+pub const SIM_PROFILE_NAME: &str = "sim";
 /// Test profile name.
-const TEST_PROFILE_NAME: &str = "test";
-/// Default nuttx clone source repository.
+pub const TEST_PROFILE_NAME: &str = "test";
+/// Default source repository for the `nuttx` workspace dependency.
 pub const DEFAULT_NUTTX_SRC: &str = "https://github.com/apache/nuttx.git";
-/// Default nuttx apps clone source repository.
+/// Default pinned revision written for the `nuttx` workspace dependency.
+pub const DEFAULT_NUTTX_REV: &str = "master";
+/// Default source repository for the `nuttx_apps` workspace dependency.
 pub const DEFAULT_NUTTX_APPS_SRC: &str = "https://github.com/apache/nuttx-apps.git";
+/// Default pinned revision written for the `nuttx-apps` workspace dependency.
+pub const DEFAULT_NUTTX_APPS_REV: &str = "master";
 
 impl NxusConfig {
     /// Constructs new default nxus config.
@@ -263,22 +267,22 @@ pub struct CommandConfig {
 }
 
 /// Default sim profile architecture.
-const DEFAULT_SIM_ARCH: &str = "sim";
+pub const DEFAULT_SIM_ARCH: &str = "sim";
 /// Default sim profile family.
-const DEFAULT_SIM_FAMILY: &str = "sim";
+pub const DEFAULT_SIM_FAMILY: &str = "sim";
 /// Default sim profile board.
-const DEFAULT_SIM_BOARD: &str = "sim";
+pub const DEFAULT_SIM_BOARD: &str = "sim";
 /// Default sim profile config base.
-const DEFAULT_SIM_CONFIG_BASE: &str = "nsh";
+pub const DEFAULT_SIM_CONFIG_BASE: &str = "nsh";
 
 /// Default test profile architecture.
-const DEFAULT_TEST_ARCH: &str = "sim";
+pub const DEFAULT_TEST_ARCH: &str = "sim";
 /// Default test profile family.
-const DEFAULT_TEST_FAMILY: &str = "sim";
+pub const DEFAULT_TEST_FAMILY: &str = "sim";
 /// Default test profile board.
-const DEFAULT_TEST_BOARD: &str = "sim";
+pub const DEFAULT_TEST_BOARD: &str = "sim";
 /// Default test profile config base.
-const DEFAULT_TEST_CONFIG_BASE: &str = "nsh";
+pub const DEFAULT_TEST_CONFIG_BASE: &str = "nsh";
 
 impl ProfileConfig {
     /// Constructs default sim profile config.
