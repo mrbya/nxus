@@ -1,6 +1,6 @@
 use std::process::ExitCode;
 
-use nxus_core::{Cmd, CoreError, ResolvedConfig, Runner, paths};
+use nxus_core::{paths, Cmd, CoreError, ResolvedConfig, Runner};
 
 use crate::commands::build;
 
@@ -22,6 +22,10 @@ pub fn run_binary(cfg: &ResolvedConfig) -> ExitCode {
     }
 
     if !binary_present && build(cfg) == ExitCode::FAILURE {
+        return ExitCode::FAILURE;
+    }
+
+    if binary_present && cfg.rebuild && build(cfg) == ExitCode::FAILURE {
         return ExitCode::FAILURE;
     }
 

@@ -2,7 +2,7 @@ use std::path::PathBuf;
 use std::process::ExitCode;
 
 use clap::{Args, Parser, Subcommand};
-use nxus_core::{ResolvedConfig, discover_config, load_config};
+use nxus_core::{discover_config, load_config, ResolvedConfig};
 
 use crate::commands::{
     build, clean, config, flash, init, menuconfig, profiles, run_binary, sim, test, workspace,
@@ -31,6 +31,10 @@ pub struct Cli {
     /// Pre-clean build dir for the given profile.
     #[arg(short = 'c', long)]
     pub clean: bool,
+
+    /// Rebuild binary for selected profile before running/flashing.
+    #[arg(short = 'r', long)]
+    pub rebuild: bool,
 
     /// Verbosity (repeatable).
     #[arg(short = 'v', action = clap::ArgAction::Count, default_value_t = 2)]
@@ -147,6 +151,7 @@ pub enum InitCommand {
 pub fn run() -> ExitCode {
     let Cli {
         clean: clean_requested,
+        rebuild,
         verbose,
         dry_run,
         profile,
@@ -175,6 +180,7 @@ pub fn run() -> ExitCode {
 
     let resolved = match ResolvedConfig::resolve(
         clean_requested,
+        rebuild,
         verbose,
         dry_run,
         &ctx,
@@ -187,6 +193,10 @@ pub fn run() -> ExitCode {
             return ExitCode::FAILURE;
         }
     };
+
+    if resolved.clean && resolved.profile_selected && clean(&resolved) == ExitCode::FAILURE {
+        return ExitCode::FAILURE;
+    }
 
     match command {
         Command::Profiles => profiles(&resolved),

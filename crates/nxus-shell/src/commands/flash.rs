@@ -1,22 +1,31 @@
 use std::process::ExitCode;
 
-use nxus_core::{CoreError, ResolvedConfig, resolve_flash_command};
+use nxus_core::{paths, resolve_flash_command, CoreError, ResolvedConfig};
 
 use crate::commands::build;
 
 /// Nxus command: flash.
 pub fn flash(cfg: &ResolvedConfig) -> ExitCode {
-    if cfg.build_dir.exists() && !cfg.build_dir.is_dir() {
-        eprintln!(
-            "{}",
-            CoreError::PathNotDir {
-                path: cfg.build_dir.clone(),
-            }
-        );
+    let build_dir = paths::build_dir(cfg, &cfg.profile);
+    let binary = paths::firmware_elf(cfg, &cfg.profile);
+    let build_dir_present = build_dir.exists();
+    let binary_present = binary.exists();
+
+    if build_dir_present && !build_dir.is_dir() {
+        eprintln!("{}", CoreError::PathNotDir { path: build_dir });
         return ExitCode::FAILURE;
     }
 
-    if build(cfg) == ExitCode::FAILURE {
+    if binary_present && !binary.is_file() {
+        eprintln!("{}", CoreError::PathNotDir { path: binary });
+        return ExitCode::FAILURE;
+    }
+
+    if !binary_present && build(cfg) == ExitCode::FAILURE {
+        return ExitCode::FAILURE;
+    }
+
+    if binary_present && cfg.rebuild && build(cfg) == ExitCode::FAILURE {
         return ExitCode::FAILURE;
     }
 

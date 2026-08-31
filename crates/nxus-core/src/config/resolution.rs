@@ -3,8 +3,8 @@ use std::path::PathBuf;
 use indexmap::IndexMap;
 
 use crate::config::{
-    ConfigContext, DEFAULT_BUILD_ROOT, DEFAULT_NUTTX_APPS_SRC, DEFAULT_NUTTX_SRC,
-    DEFAULT_OVERLAY_ROOT, DEFAULT_PROJECT_DEFAULT_PROFILE, DEFAULT_WORKSPACE_ROOT, NxusConfig,
+    ConfigContext, NxusConfig, DEFAULT_BUILD_ROOT, DEFAULT_NUTTX_APPS_SRC, DEFAULT_NUTTX_SRC,
+    DEFAULT_OVERLAY_ROOT, DEFAULT_PROJECT_DEFAULT_PROFILE, DEFAULT_WORKSPACE_ROOT,
 };
 use crate::{CommandConfig, CoreError, CoreResult, ProfileConfig, Runner};
 
@@ -16,6 +16,8 @@ pub struct ResolvedConfig {
     pub cwd: PathBuf,
     /// Pre-celan profile build dir?
     pub clean: bool,
+    /// Rebuild project for selected profile?
+    pub rebuild: bool,
     /// Runner with verbosity and dry-run config.
     pub runner: Runner,
     /// Config discovery context.
@@ -68,6 +70,7 @@ impl ResolvedConfig {
     /// Returns [`CoreError::UnknownProfile`] when trying to resolve config for an unknown profile.
     pub fn resolve(
         clean: bool,
+        rebuild: bool,
         verbose: u8,
         dry_run: bool,
         ctx: &ConfigContext,
@@ -130,6 +133,7 @@ impl ResolvedConfig {
         Ok(Self {
             cwd: ctx.cwd.clone(),
             clean,
+            rebuild,
             runner: Runner { verbose, dry_run },
             ctx: ctx.clone(),
             profile_selected: profile.is_some(),
