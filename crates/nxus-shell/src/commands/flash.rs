@@ -1,6 +1,6 @@
 use std::process::ExitCode;
 
-use nxus_core::{paths, resolve_flash_command, CoreError, ResolvedConfig};
+use nxus_core::{CoreError, ResolvedConfig, paths, resolve_flash_command};
 
 use crate::commands::build;
 

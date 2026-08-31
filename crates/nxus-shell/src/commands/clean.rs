@@ -1,13 +1,13 @@
 use std::fs;
 use std::process::ExitCode;
 
-use nxus_core::{ResolvedConfig, unlink_app, unlink_config};
+use nxus_core::{ProfileSelection, ResolvedConfig, unlink_app, unlink_config};
 
 /// Nxus command: clean
 pub fn clean(cfg: &ResolvedConfig) -> ExitCode {
     let mut err = false;
 
-    if cfg.profile_selected {
+    if cfg.profile_selection == ProfileSelection::Explicit {
         if let Err(error) = unlink_config(cfg, &cfg.profile, cfg.profiles.get(&cfg.profile)) {
             eprintln!("{error}");
             err = true;
@@ -51,7 +51,7 @@ mod tests {
     use std::fs;
     use std::process::ExitCode;
 
-    use nxus_core::paths;
+    use nxus_core::{ProfileSelection, paths};
 
     use crate::commands::clean;
     use crate::tests::resolved_config;
@@ -60,7 +60,7 @@ mod tests {
     fn clean_removes_selected_profile_build_dir() {
         let temp_dir = tempfile::TempDir::new().expect("tempdir should be created");
         let mut cfg = resolved_config(temp_dir.path());
-        cfg.profile_selected = true;
+        cfg.profile_selection = ProfileSelection::Explicit;
 
         fs::create_dir_all(&cfg.build_dir).expect("build dir should be created");
         fs::create_dir_all(paths::board_config_root(&cfg)).expect("board config root should exist");

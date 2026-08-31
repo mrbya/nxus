@@ -1,7 +1,9 @@
 use std::path::{Path, PathBuf};
 
 use indexmap::IndexMap;
-use nxus_core::{CommandConfig, ConfigContext, ProfileConfig, ResolvedConfig, Runner};
+use nxus_core::{
+    CommandConfig, ConfigContext, ProfileConfig, ProfileSelection, ResolvedConfig, Runner,
+};
 
 pub fn profile_config(arch: &str, family: &str, board: &str, config_base: &str) -> ProfileConfig {
     ProfileConfig {
@@ -36,6 +38,7 @@ pub fn resolved_config(project_dir: &Path) -> ResolvedConfig {
     ResolvedConfig {
         cwd,
         clean: false,
+        rebuild: false,
         runner: Runner {
             verbose: 1,
             dry_run: true,
@@ -44,7 +47,7 @@ pub fn resolved_config(project_dir: &Path) -> ResolvedConfig {
             project_dir: PathBuf::from(project_dir),
             cwd: PathBuf::from(project_dir),
         },
-        profile_selected: false,
+        profile_selection: ProfileSelection::Default,
         profile: profile_name,
         profiles,
         build_root: build_root.clone(),

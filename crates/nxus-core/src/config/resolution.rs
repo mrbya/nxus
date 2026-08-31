@@ -22,8 +22,8 @@ pub struct ResolvedConfig {
     pub runner: Runner,
     /// Config discovery context.
     pub ctx: ConfigContext,
-    /// Profile selected?
-    pub profile_selected: bool,
+    /// Whether the active profile came from explicit CLI selection or defaults.
+    pub profile_selection: ProfileSelection,
     /// Selected profile name, if any.
     pub profile: String,
     /// Profiles.
@@ -61,6 +61,15 @@ pub struct ResolvedConfig {
     pub flash: Option<CommandConfig>,
     /// Config overlay available for selected profile?
     pub config_overlay: PathBuf,
+}
+
+/// Indicates how the active profile was selected.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ProfileSelection {
+    /// No profile was requested; the default profile is active.
+    Default,
+    /// A profile was explicitly requested by the caller.
+    Explicit,
 }
 
 impl ResolvedConfig {
@@ -136,7 +145,11 @@ impl ResolvedConfig {
             rebuild,
             runner: Runner { verbose, dry_run },
             ctx: ctx.clone(),
-            profile_selected: profile.is_some(),
+            profile_selection: if profile.is_some() {
+                ProfileSelection::Explicit
+            } else {
+                ProfileSelection::Default
+            },
             profile: selected,
             profiles: cfg.profiles.clone(),
             build_root,
@@ -160,7 +173,7 @@ impl ResolvedConfig {
     #[must_use]
     pub fn with_profile(&self, profile: &str) -> Self {
         let mut config = self.clone();
-        config.profile_selected = true;
+        config.profile_selection = ProfileSelection::Explicit;
         config.profile = String::from(profile);
         config
     }
@@ -189,6 +202,7 @@ fn select_profile(profile: Option<String>, cfg: &NxusConfig) -> CoreResult<Strin
 mod tests {
     use std::path::PathBuf;
 
+    use crate::config::resolution::ProfileSelection;
     use crate::config::{ConfigContext, NxusConfig, ResolvedConfig};
     use crate::{CoreError, ProfileConfig};
 
@@ -223,13 +237,15 @@ mod tests {
         );
 
         let profile = String::from("prod");
-        let resolved = ResolvedConfig::resolve(true, 4, true, &context(), Some(&profile), &cfg)
-            .expect("config should resolve");
+        let resolved =
+            ResolvedConfig::resolve(true, true, 4, true, &context(), Some(&profile), &cfg)
+                .expect("config should resolve");
 
         assert!(resolved.clean);
+        assert!(resolved.rebuild);
         assert_eq!(resolved.runner.verbose, 4);
         assert!(resolved.runner.dry_run);
-        assert!(resolved.profile_selected);
+        assert_eq!(resolved.profile_selection, ProfileSelection::Explicit);
         assert_eq!(resolved.profile, profile);
         assert_eq!(resolved.build_root, PathBuf::from("/tmp/project/out"));
         assert_eq!(resolved.build_dir, PathBuf::from("/tmp/project/out/prod"));
@@ -254,10 +270,11 @@ mod tests {
     fn resolve_uses_default_profile_when_not_selected() {
         let cfg = NxusConfig::new();
 
-        let resolved = ResolvedConfig::resolve(false, 2, false, &context(), None, &cfg)
+        let resolved = ResolvedConfig::resolve(false, false, 2, false, &context(), None, &cfg)
             .expect("default config should resolve");
 
-        assert!(!resolved.profile_selected);
+        assert!(!resolved.rebuild);
+        assert_eq!(resolved.profile_selection, ProfileSelection::Default);
         assert_eq!(resolved.profile, String::from("sim"));
         assert_eq!(resolved.build_dir, PathBuf::from("/tmp/project/build/sim"));
     }
@@ -267,9 +284,16 @@ mod tests {
         let cfg = NxusConfig::new();
         let requested_profile = String::from("missing");
 
-        let error =
-            ResolvedConfig::resolve(false, 0, false, &context(), Some(&requested_profile), &cfg)
-                .expect_err("unknown profile should fail");
+        let error = ResolvedConfig::resolve(
+            false,
+            false,
+            0,
+            false,
+            &context(),
+            Some(&requested_profile),
+            &cfg,
+        )
+        .expect_err("unknown profile should fail");
 
         assert!(matches!(
             error,
@@ -280,12 +304,13 @@ mod tests {
     #[test]
     fn with_profile_marks_profile_as_selected() {
         let resolved =
-            ResolvedConfig::resolve(false, 1, true, &context(), None, &NxusConfig::new())
+            ResolvedConfig::resolve(false, true, 1, true, &context(), None, &NxusConfig::new())
                 .expect("default config should resolve");
 
         let selected = resolved.with_profile("test");
 
-        assert!(selected.profile_selected);
+        assert_eq!(selected.profile_selection, ProfileSelection::Explicit);
+        assert!(selected.rebuild);
         assert_eq!(selected.profile, String::from("test"));
         assert_eq!(selected.build_dir, resolved.build_dir);
         assert_eq!(selected.workspace_root, resolved.workspace_root);

@@ -2,7 +2,7 @@ use std::path::PathBuf;
 use std::process::ExitCode;
 
 use clap::{Args, Parser, Subcommand};
-use nxus_core::{discover_config, load_config, ResolvedConfig};
+use nxus_core::{discover_config, load_config, ProfileSelection, ResolvedConfig};
 
 use crate::commands::{
     build, clean, config, flash, init, menuconfig, profiles, run_binary, sim, test, workspace,
@@ -15,11 +15,20 @@ use crate::commands::{
     about = "CLI build system companion for opinionated NuttX projects",
     propagate_version = true,
     after_help = r#"Examples:
+
+    # Init project with a config or generate a new project scaffold
     nxus init config
     nxus init project demo
+
+    # Config -> build -> run binary
+    nxus config
     nxus build
+    nxus run
+
+    # Flash binary
     nxus -p prod flash
-    nxus menuconfig
+
+    # Run simulation and tests
     nxus sim
     nxus test
 
@@ -194,7 +203,10 @@ pub fn run() -> ExitCode {
         }
     };
 
-    if resolved.clean && resolved.profile_selected && clean(&resolved) == ExitCode::FAILURE {
+    if resolved.clean
+        && resolved.profile_selection == ProfileSelection::Explicit
+        && clean(&resolved) == ExitCode::FAILURE
+    {
         return ExitCode::FAILURE;
     }
 
@@ -221,14 +233,47 @@ mod tests {
 
     #[test]
     fn parse_build_command_with_global_flags() {
-        let cli = Cli::try_parse_from(["nxus", "-c", "-vv", "-d", "-p", "prod", "build"])
+        let cli = Cli::try_parse_from(["nxus", "-c", "-r", "-vv", "-d", "-p", "prod", "build"])
             .expect("cli should parse");
 
         assert!(cli.clean);
+        assert!(cli.rebuild);
         assert_eq!(cli.verbose, 2);
         assert!(cli.dry_run);
         assert_eq!(cli.profile, Some(String::from("prod")));
         assert!(matches!(cli.command, Command::Build));
+    }
+
+    #[test]
+    fn parse_run_without_rebuild_defaults_to_false() {
+        let cli = Cli::try_parse_from(["nxus", "run"]).expect("cli should parse");
+
+        assert!(!cli.rebuild);
+        assert!(matches!(cli.command, Command::Run));
+    }
+
+    #[test]
+    fn parse_run_with_long_rebuild_flag() {
+        let cli = Cli::try_parse_from(["nxus", "--rebuild", "run"]).expect("cli should parse");
+
+        assert!(cli.rebuild);
+        assert!(matches!(cli.command, Command::Run));
+    }
+
+    #[test]
+    fn parse_run_with_short_rebuild_flag() {
+        let cli = Cli::try_parse_from(["nxus", "-r", "run"]).expect("cli should parse");
+
+        assert!(cli.rebuild);
+        assert!(matches!(cli.command, Command::Run));
+    }
+
+    #[test]
+    fn parse_short_rebuild_flag_with_run_alias() {
+        let cli = Cli::try_parse_from(["nxus", "-r", "r"]).expect("cli should parse");
+
+        assert!(cli.rebuild);
+        assert!(matches!(cli.command, Command::Run));
     }
 
     #[test]

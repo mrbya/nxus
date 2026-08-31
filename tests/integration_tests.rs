@@ -88,6 +88,10 @@ impl ProjectFixture {
         self.project_dir.join("build").join(profile)
     }
 
+    fn firmware_elf(&self, profile: &str) -> PathBuf {
+        self.build_dir(profile).join("nuttx")
+    }
+
     fn workspace_root(&self) -> PathBuf {
         self.project_dir.join("workspace")
     }
@@ -206,6 +210,20 @@ fn write_file(path: &Path, content: &str) {
     fs::create_dir_all(path.parent().expect("file parent should exist"))
         .expect("file parent should be created");
     fs::write(path, content).expect("file should be written");
+}
+
+fn assert_ordered(stderr: &str, first: &str, second: &str) {
+    let first_pos = stderr
+        .find(first)
+        .unwrap_or_else(|| panic!("`{first}` missing from stderr: {stderr}"));
+    let second_pos = stderr
+        .find(second)
+        .unwrap_or_else(|| panic!("`{second}` missing from stderr: {stderr}"));
+
+    assert!(
+        first_pos < second_pos,
+        "expected `{first}` before `{second}` in stderr: {stderr}"
+    );
 }
 
 #[test]
@@ -385,12 +403,53 @@ fn run_alias_prints_selected_profile_binary_path() {
 
     fs::create_dir_all(fixture.build_dir("prod")).expect("prod build dir should be created");
 
-    fixture
+    let assert = fixture
         .command()
         .args(["-d", "-vvv", "-p", "prod", "r"])
         .assert()
-        .success()
-        .stderr(predicate::str::contains("build/prod/nuttx"));
+        .success();
+
+    let stderr = String::from_utf8_lossy(&assert.get_output().stderr);
+    assert!(stderr.contains("ninja -C"));
+    assert!(stderr.contains("build/prod/nuttx"));
+    assert_ordered(&stderr, "ninja -C", "build/prod/nuttx");
+}
+
+#[test]
+fn run_skips_rebuild_when_firmware_exists_and_rebuild_is_not_requested() {
+    let fixture = ProjectFixture::new();
+
+    fs::create_dir_all(fixture.build_dir("prod")).expect("prod build dir should be created");
+    write_file(&fixture.firmware_elf("prod"), "elf\n");
+
+    let assert = fixture
+        .command()
+        .args(["-d", "-vvv", "-p", "prod", "run"])
+        .assert()
+        .success();
+
+    let stderr = String::from_utf8_lossy(&assert.get_output().stderr);
+    assert!(!stderr.contains("ninja -C"));
+    assert!(stderr.contains("build/prod/nuttx"));
+}
+
+#[test]
+fn run_rebuilds_when_requested_even_if_firmware_exists() {
+    let fixture = ProjectFixture::new();
+
+    fs::create_dir_all(fixture.build_dir("prod")).expect("prod build dir should be created");
+    write_file(&fixture.firmware_elf("prod"), "elf\n");
+
+    let assert = fixture
+        .command()
+        .args(["-d", "-vvv", "--rebuild", "-p", "prod", "run"])
+        .assert()
+        .success();
+
+    let stderr = String::from_utf8_lossy(&assert.get_output().stderr);
+    assert!(stderr.contains("ninja -C"));
+    assert!(stderr.contains("build/prod/nuttx"));
+    assert_ordered(&stderr, "ninja -C", "build/prod/nuttx");
 }
 
 #[test]
@@ -405,6 +464,25 @@ fn sim_command_uses_sim_profile_binary_path() {
         .assert()
         .success()
         .stderr(predicate::str::contains("build/sim/nuttx"));
+}
+
+#[test]
+fn sim_rebuild_flag_propagates_to_run_behavior() {
+    let fixture = ProjectFixture::new();
+
+    fs::create_dir_all(fixture.build_dir("sim")).expect("sim build dir should be created");
+    write_file(&fixture.firmware_elf("sim"), "elf\n");
+
+    let assert = fixture
+        .command()
+        .args(["-d", "-vvv", "--rebuild", "sim"])
+        .assert()
+        .success();
+
+    let stderr = String::from_utf8_lossy(&assert.get_output().stderr);
+    assert!(stderr.contains("ninja -C"));
+    assert!(stderr.contains("build/sim/nuttx"));
+    assert_ordered(&stderr, "ninja -C", "build/sim/nuttx");
 }
 
 #[test]
@@ -556,16 +634,39 @@ fn flash_uses_profile_command_configuration_in_dry_run() {
     let fixture = ProjectFixture::new();
 
     fs::create_dir_all(fixture.build_dir("prod")).expect("prod build dir should be created");
-    write_file(&fixture.build_dir("prod").join("nuttx"), "elf\n");
+    write_file(&fixture.firmware_elf("prod"), "elf\n");
 
-    fixture
+    let assert = fixture
         .command()
         .args(["-d", "-vvv", "-p", "prod", "flash"])
         .assert()
-        .success()
-        .stderr(predicate::str::contains("openocd"))
-        .stderr(predicate::str::contains("program"))
-        .stderr(predicate::str::contains("build/prod/nuttx"));
+        .success();
+
+    let stderr = String::from_utf8_lossy(&assert.get_output().stderr);
+    assert!(!stderr.contains("ninja -C"));
+    assert!(stderr.contains("openocd"));
+    assert!(stderr.contains("program"));
+    assert!(stderr.contains("build/prod/nuttx"));
+}
+
+#[test]
+fn flash_rebuilds_when_requested_even_if_firmware_exists() {
+    let fixture = ProjectFixture::new();
+
+    fs::create_dir_all(fixture.build_dir("prod")).expect("prod build dir should be created");
+    write_file(&fixture.firmware_elf("prod"), "elf\n");
+
+    let assert = fixture
+        .command()
+        .args(["-d", "-vvv", "--rebuild", "-p", "prod", "flash"])
+        .assert()
+        .success();
+
+    let stderr = String::from_utf8_lossy(&assert.get_output().stderr);
+    assert!(stderr.contains("ninja -C"));
+    assert!(stderr.contains("openocd"));
+    assert!(stderr.contains("build/prod/nuttx"));
+    assert_ordered(&stderr, "ninja -C", "openocd");
 }
 
 #[test]

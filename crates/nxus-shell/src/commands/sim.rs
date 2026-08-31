@@ -2,11 +2,15 @@ use std::process::ExitCode;
 
 use nxus_core::ResolvedConfig;
 
-use crate::commands::run_binary;
+use crate::commands::{clean, run_binary};
 
 /// Nxus command: sim
 pub fn sim(cfg: &ResolvedConfig) -> ExitCode {
     let config = cfg.with_profile("sim");
+
+    if config.clean && clean(&config) == ExitCode::FAILURE {
+        return ExitCode::FAILURE;
+    }
 
     if run_binary(&config) == ExitCode::FAILURE {
         return ExitCode::FAILURE;
