@@ -3,8 +3,8 @@ use std::path::PathBuf;
 use indexmap::IndexMap;
 
 use crate::config::{
-    ConfigContext, NxusConfig, DEFAULT_BUILD_ROOT, DEFAULT_NUTTX_APPS_SRC, DEFAULT_NUTTX_SRC,
-    DEFAULT_OVERLAY_ROOT, DEFAULT_PROJECT_DEFAULT_PROFILE, DEFAULT_WORKSPACE_ROOT,
+    ConfigContext, DEFAULT_BUILD_ROOT, DEFAULT_NUTTX_APPS_SRC, DEFAULT_NUTTX_SRC,
+    DEFAULT_OVERLAY_ROOT, DEFAULT_PROJECT_DEFAULT_PROFILE, DEFAULT_WORKSPACE_ROOT, NxusConfig,
 };
 use crate::{CommandConfig, CoreError, CoreResult, ProfileConfig, Runner};
 

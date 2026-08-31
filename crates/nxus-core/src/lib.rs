@@ -80,8 +80,9 @@ pub(crate) mod workspace;
 
 // Re-exports.
 pub use config::{
-    CommandConfig, ConfigContext, NxusConfig, ProfileConfig, ProfileSelection, ResolvedConfig,
-    discover_config, load_config,
+    CommandConfig, ConfigContext, DEFAULT_NUTTX_APPS_REV, DEFAULT_NUTTX_APPS_SRC,
+    DEFAULT_NUTTX_REV, DEFAULT_NUTTX_SRC, NxusConfig, ProfileConfig, ProfileSelection,
+    ResolvedConfig, discover_config, load_config,
 };
 pub use error::{CoreError, CoreResult};
 pub use exec::{Cmd, Runner};

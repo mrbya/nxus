@@ -1,12 +1,14 @@
 use std::fs;
 use std::path::Path;
 
+use crate::config::{
+    DEFAULT_BUILD_ROOT, DEFAULT_NUTTX_APPS_REV, DEFAULT_NUTTX_APPS_SRC, DEFAULT_NUTTX_REV,
+    DEFAULT_NUTTX_SRC, DEFAULT_PROJECT_DEFAULT_PROFILE, DEFAULT_SIM_ARCH, DEFAULT_SIM_BOARD,
+    DEFAULT_SIM_CONFIG_BASE, DEFAULT_SIM_FAMILY, DEFAULT_TEST_ARCH, DEFAULT_TEST_BOARD,
+    DEFAULT_TEST_CONFIG_BASE, DEFAULT_TEST_FAMILY, DEFAULT_WORKSPACE_ROOT, SIM_PROFILE_NAME,
+    TEST_PROFILE_NAME,
+};
 use crate::{CoreError, CoreResult};
-
-/// Default pinned revision written for the `nuttx` workspace dependency.
-const DEFAULT_NUTTX_REV: &str = "master";
-/// Default pinned revision written for the `nuttx-apps` workspace dependency.
-const DEFAULT_NUTTX_APPS_REV: &str = "master";
 
 /// Initializes the current directory as a config-only Nxus project.
 ///
@@ -125,9 +127,49 @@ fn write_file(path: &Path, contents: &str) -> CoreResult<()> {
 /// Renders the minimal `nxus.toml` written by init commands.
 fn render_nxus_toml() -> String {
     format!(
-        "# Nxus project configuration.\n# Pin these revisions to the NuttX baseline you \
-         validate.\n\n[workspace.nuttx]\nrev = \
-         \"{DEFAULT_NUTTX_REV}\"\n\n[workspace.nuttx_apps]\nrev = \"{DEFAULT_NUTTX_APPS_REV}\"\n"
+        r#"# Global project config.
+[project]
+default_profile = "{DEFAULT_PROJECT_DEFAULT_PROFILE}"
+
+# Build dir config.
+[build]
+root = "{DEFAULT_BUILD_ROOT}"
+link_compile_commands = true
+
+# Project-local `NuttX` workspace config.
+# Pin the `nuttx` and `nuttx_apps` revisions to the baseline you need.
+[workspace]
+root = "{DEFAULT_WORKSPACE_ROOT}"
+
+[workspace.nuttx]
+# src = "{DEFAULT_NUTTX_SRC}"
+rev = "{DEFAULT_NUTTX_REV}"
+
+[workspace.nuttx_apps]
+# src = "{DEFAULT_NUTTX_APPS_SRC}"
+rev = "{DEFAULT_NUTTX_APPS_REV}"
+
+# Sim profile overrides.
+# [profile.{SIM_PROFILE_NAME}]
+# arch = "{DEFAULT_SIM_ARCH}"
+# family = "{DEFAULT_SIM_FAMILY}"
+# board = "{DEFAULT_SIM_BOARD}"
+# config_base = "{DEFAULT_SIM_CONFIG_BASE}"
+
+# Test profile overrides.
+# [profile.{TEST_PROFILE_NAME}]
+# arch = "{DEFAULT_TEST_ARCH}"
+# family = "{DEFAULT_TEST_FAMILY}"
+# board = "{DEFAULT_TEST_BOARD}"
+# config_base = "{DEFAULT_TEST_CONFIG_BASE}"
+
+# Custom profile definitions
+# [profile.prod]
+# arch = "arm"
+# family = "stm32f7"
+# board = "nucleo-f767zi"
+# config_base = "evalos"
+"#
     )
 }
 
