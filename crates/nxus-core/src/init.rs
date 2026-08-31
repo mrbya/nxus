@@ -47,6 +47,28 @@ pub fn init_project(project_dir: &Path) -> CoreResult<()> {
         fs::create_dir_all(project_dir)?;
     }
 
+    // Dirs
+    let app_dir = project_dir.join("app");
+    let app_include = app_dir.join("include");
+    let app_src = app_dir.join("src");
+    let config_dir = project_dir.join("config");
+    let lib_dir = project_dir.join("lib");
+    let test_dir = project_dir.join("test");
+    let host_test_dir = test_dir.join("host");
+
+    // App dir
+    let app_cmake = app_dir.join("CMakeLists.txt");
+    let app_kconfig = app_dir.join("Kconfig");
+    let app_makefile = app_dir.join("Makefile");
+    let app_makedefs = app_dir.join("Make.defs");
+    let app_main_hpp = app_include.join("main.hpp");
+    let app_main_cpp = app_src.join("main.cpp");
+
+    // Config dir
+    let config_common = config_dir.join("common.config");
+    let config_sim = config_dir.join("sim.overlay");
+    let config_test = config_dir.join("test.overlay");
+
     let nxus_toml = project_dir.join("nxus.toml");
     let gitignore = project_dir.join(".gitignore");
     let app_root = project_dir.join("app");
@@ -148,7 +170,7 @@ const TEST_OVERLAY: &str = "# Extra settings for the default test profile.\n";
 mod tests {
     use std::fs;
 
-    use crate::{CoreError, init_project, init_project_config, load_config};
+    use crate::{init_project, init_project_config, load_config, CoreError};
 
     #[test]
     fn init_project_config_writes_minimal_files() {
