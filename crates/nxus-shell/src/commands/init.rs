@@ -55,7 +55,6 @@ mod tests {
 
         assert_eq!(result, ExitCode::SUCCESS);
         assert!(temp_dir.path().join("nxus.toml").is_file());
-        assert!(temp_dir.path().join("config/common.config").is_file());
     }
 
     #[test]

@@ -19,19 +19,9 @@ pub fn init_project_config(project_dir: &Path) -> CoreResult<()> {
     ensure_directory(project_dir)?;
 
     let nxus_toml = project_dir.join("nxus.toml");
-    let common_config = project_dir.join("config").join("common.config");
-    let sim_overlay = project_dir.join("config").join("sim.overlay");
-    let test_overlay = project_dir.join("config").join("test.overlay");
-
     ensure_absent(&nxus_toml)?;
-    ensure_absent(&common_config)?;
-    ensure_absent(&sim_overlay)?;
-    ensure_absent(&test_overlay)?;
 
     write_file(&nxus_toml, &render_nxus_toml())?;
-    write_file(&common_config, COMMON_CONFIG)?;
-    write_file(&sim_overlay, SIM_OVERLAY)?;
-    write_file(&test_overlay, TEST_OVERLAY)?;
 
     Ok(())
 }
@@ -193,15 +183,12 @@ mod tests {
     use crate::{CoreError, init_project, init_project_config, load_config};
 
     #[test]
-    fn init_project_config_writes_minimal_files() {
+    fn init_project_config_writes_minimal_config() {
         let temp_dir = tempfile::TempDir::new().expect("tempdir should be created");
 
         init_project_config(temp_dir.path()).expect("config init should succeed");
 
         assert!(temp_dir.path().join("nxus.toml").is_file());
-        assert!(temp_dir.path().join("config/common.config").is_file());
-        assert!(temp_dir.path().join("config/sim.overlay").is_file());
-        assert!(temp_dir.path().join("config/test.overlay").is_file());
         assert!(load_config(temp_dir.path()).is_ok());
     }
 

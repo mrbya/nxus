@@ -561,7 +561,6 @@ fn init_config_succeeds_without_existing_project() {
     command.args(["init", "config"]).assert().success();
 
     assert!(temp_dir.path().join("nxus.toml").is_file());
-    assert!(temp_dir.path().join("config/common.config").is_file());
 
     let mut profiles = Command::cargo_bin("nxus").expect("nxus binary should build");
     profiles.current_dir(temp_dir.path());
