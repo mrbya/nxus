@@ -1,0 +1,61 @@
+# Template metadata.
+[template]
+id = "nxus"
+name = "nxus-nuttx-project"
+description = "Opinionated `NuttX` app managed by nxus"
+language = "cpp"
+version = "0.1.0"
+
+# Template source directory.
+[template.source]
+root = "template"
+
+# Template variable definitions.
+[variables]
+test_var = {
+    prompt = "Test variable",
+    transforms = ["raw", "kebab", "snake", "pascal", "camel", "screaming_snake", "upper", "lower"],
+    placeholders = {
+        raw             = "__TEST_VAR__",
+        kebab           = "__TEST_VAR_KEBAB__",
+        snake           = "__TEST_VAR_SNAKE__",
+        pascal          = "__TEST_VAR_PASCAL__",
+        camel           = "__TEST_VAR_CAMEL__",
+        screaming_snake = "__TEST_VAR_SCREAMING__",
+        upper           = "__TEST_VAR_UPPER__",
+        lower           = "__TEST_VAR_LOWER__",
+   }
+}
+
+include_optional = { default = false }
+
+# Template file path config.
+[paths]
+exclude = [".git", ".DS_Store", "target", "node_modules"]
+binary_extensions = ["png", "jpg", "jpeg", "gif", "ico", "pdf", "zip"]
+binary_files = []
+
+# Conditional include paths.
+# [[conditionals]]
+# path = "optional_file.txt"
+# when = "include_optional"
+
+# Template generation hooks
+[hooks]
+
+# Template validation config.
+# [validation]
+# output_dir_name = "zappy-validation-template"
+# variables = {
+#     test_var = "validation test var value",
+#     include_optional = true,
+# }
+
+# Validation setup hooks.
+# [[validation.setup]]
+
+# Validation process steps.
+# [[validation.steps]]
+
+# Validation teardown hooks.
+# [[validation.teardown]]
