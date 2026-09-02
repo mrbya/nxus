@@ -22,6 +22,7 @@ include_dir.workspace   = true
 tempfile.workspace      = true
 zappy-core.workspace    = true
 zappy-fs.workspace      = true
+chrono.workspace        = true
 spinners                = { workspace = true, optional = true }
 
 [dev-dependencies]

@@ -1,5 +1,6 @@
 use std::fs::{self, create_dir_all};
 use std::path::Path;
+use std::process::Command as OsCommand;
 
 use crate::config::{
     DEFAULT_BUILD_ROOT, DEFAULT_NUTTX_APPS_REV, DEFAULT_NUTTX_APPS_SRC, DEFAULT_NUTTX_REV,
@@ -10,8 +11,9 @@ use crate::config::{
 };
 use crate::{CoreError, CoreResult};
 
+use chrono::Datelike;
 use include_dir::{include_dir, Dir, DirEntry};
-use zappy_core::builtins::PROJECT_NAME;
+use zappy_core::builtins::{PROJECT_NAME, USER, YEAR};
 use zappy_core::{
     resolve_variables, Manifest, VariableResolutionInput, VariableValue, VariableValueMap,
 };
@@ -46,6 +48,12 @@ pub fn init_project_config(project_dir: &Path) -> CoreResult<()> {
 /// would be overwritten, or an underlying I/O operation fails.
 pub fn init_project(project_dir: &Path) -> CoreResult<()> {
     if project_dir.exists() {
+        if project_dir.is_file() {
+            return Err(CoreError::PathNotDir {
+                path: project_dir.to_path_buf(),
+            });
+        }
+
         return Err(CoreError::PathAlreadyExists {
             path: project_dir.to_path_buf(),
         });
@@ -59,15 +67,21 @@ pub fn init_project(project_dir: &Path) -> CoreResult<()> {
     let manifest_path = template_path.join("zappy.toml");
     let manifest = Manifest::load_from_path(&manifest_path)?;
 
-    let mut builtin_variables = VariableValueMap::new();
     let project_name = project_dir.file_name().map_or_else(
         || String::from("nuttx-app"),
         |name| String::from(name.to_str().unwrap_or("nuttx-app")),
     );
+    let user = user_name();
+    let year = chrono::Local::now().year();
+
+    let mut builtin_variables = VariableValueMap::new();
+
     builtin_variables.insert(
         String::from(PROJECT_NAME),
         VariableValue::String(project_name),
     );
+    builtin_variables.insert(String::from(USER), VariableValue::String(user));
+    builtin_variables.insert(String::from(YEAR), VariableValue::String(year.to_string()));
 
     let template = DiscoveredTemplate {
         search_path: TemplateSearchPath {
@@ -96,13 +110,19 @@ pub fn init_project(project_dir: &Path) -> CoreResult<()> {
         force: false,
     };
 
-    let plan = build_generation_plan(&plan_input).map_err(|error| CoreError::ZappyFs(*error))?;
+    let plan = build_generation_plan(&plan_input).map_err(|error| CoreError::ZappyFs {
+        error: (*error).to_string(),
+    })?;
 
     create_dir_all(&plan.output_dir)?;
     let summary = match materialize_generation_plan(&plan, MaterializationOptions { force: false })
     {
         Ok(summary) => summary,
-        Err(error) => return Err(CoreError::ZappyFs(*error)),
+        Err(error) => {
+            return Err(CoreError::ZappyFs {
+                error: (*error).to_string(),
+            });
+        }
     };
 
     println!(
@@ -130,17 +150,6 @@ fn ensure_directory(path: &Path) -> CoreResult<()> {
     }
 
     Err(CoreError::PathNotDir {
-        path: path.to_path_buf(),
-    })
-}
-
-/// Verifies that an existing directory contains no files before scaffolding.
-fn ensure_empty_directory(path: &Path) -> CoreResult<()> {
-    if fs::read_dir(path)?.next().is_none() {
-        return Ok(());
-    }
-
-    Err(CoreError::DirectoryNotEmpty {
         path: path.to_path_buf(),
     })
 }
@@ -190,6 +199,41 @@ fn extract_dir(dir: &Dir<'_>, destination_root: &Path) -> CoreResult<()> {
     }
 
     Ok(())
+}
+
+/// Retrieves host username.
+fn user_name() -> String {
+    git_user_name()
+        .or_else(env_user)
+        .unwrap_or_else(|| String::from("{TODO: add username}"))
+}
+
+/// Retrieves git username.
+fn git_user_name() -> Option<String> {
+    let output = OsCommand::new("git")
+        .args(["config", "user.name"])
+        .output()
+        .ok()?;
+
+    if !output.status.success() {
+        return None;
+    }
+
+    let value = String::from_utf8_lossy(&output.stdout).trim().to_owned();
+
+    if value.is_empty() {
+        return None;
+    }
+
+    Some(value)
+}
+
+/// Retrieves env username.
+fn env_user() -> Option<String> {
+    std::env::var("USER")
+        .or_else(|_| std::env::var("USERNAME"))
+        .ok()
+        .filter(|value| !value.trim().is_empty())
 }
 
 /// Renders the minimal `nxus.toml` written by init commands.
@@ -277,24 +321,13 @@ mod tests {
 
         assert!(project_dir.join("nxus.toml").is_file());
         assert!(project_dir.join(".gitignore").is_file());
+        assert!(project_dir.join("app").is_dir());
         assert!(project_dir.join("app/CMakeLists.txt").is_file());
         assert!(project_dir.join("app/Kconfig").is_file());
-        assert!(project_dir.join("app/app").is_dir());
-        assert!(project_dir.join("app/lib").is_dir());
-        assert!(project_dir.join("app/test").is_dir());
-        assert!(project_dir.join("app/config/common.config").is_file());
+        assert!(project_dir.join("lib").is_dir());
+        assert!(project_dir.join("test").is_dir());
+        assert!(project_dir.join("config/common.config").is_file());
         assert!(load_config(&project_dir).is_ok());
-    }
-
-    #[test]
-    fn init_project_allows_existing_empty_directory() {
-        let temp_dir = tempfile::TempDir::new().expect("tempdir should be created");
-        let project_dir = temp_dir.path().join("demo");
-        fs::create_dir_all(&project_dir).expect("project dir should be created");
-
-        init_project(&project_dir).expect("project init should succeed");
-
-        assert!(project_dir.join("app").is_dir());
     }
 
     #[test]
@@ -306,7 +339,7 @@ mod tests {
 
         assert!(matches!(
             init_project(&project_dir),
-            Err(CoreError::DirectoryNotEmpty { .. })
+            Err(CoreError::PathAlreadyExists { .. })
         ));
     }
 

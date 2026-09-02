@@ -35,8 +35,13 @@ rev = "master"
 # config_base = "nsh"
 
 # Custom profile definitions
-# [profile.prod]
-# arch = "arm"
-# family = "stm32f7"
-# board = "nucleo-f767zi"
-# config_base = "evalos"
+[profile.prod]
+arch = "arm"
+family = "stm32f7"
+board = "nucleo-f767zi"
+config_base = "evalos"
+flash = {
+    command = "openocd"
+    args = ["-f", "board/st_nucleo_f7.cfg", "-c", "program {elf} verify reset exit"]
+}
+

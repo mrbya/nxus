@@ -600,7 +600,7 @@ fn init_project_creates_new_project_scaffold() {
     assert!(project_dir.join("nxus.toml").is_file());
     assert!(project_dir.join("app/CMakeLists.txt").is_file());
     assert!(project_dir.join("app/Kconfig").is_file());
-    assert!(project_dir.join("app/config/common.config").is_file());
+    assert!(project_dir.join("config/common.config").is_file());
 
     let mut profiles = Command::cargo_bin("nxus").expect("nxus binary should build");
     profiles.current_dir(project_dir.join("app"));
@@ -625,7 +625,7 @@ fn init_project_refuses_non_empty_destination() {
         .args(["init", "project", "demo"])
         .assert()
         .failure()
-        .stderr(predicate::str::contains("must be empty"));
+        .stderr(predicate::str::contains("already exists"));
 }
 
 #[test]

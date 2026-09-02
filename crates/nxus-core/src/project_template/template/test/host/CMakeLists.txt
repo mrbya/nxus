@@ -4,7 +4,7 @@ set(includes ${CMAKE_CURRENT_SOURCE_DIR}/include)
 if(CONFIG___ZAPPY_PROJECT_NAME_SCREAMING___TEST_HOST)
   nuttx_add_application(
     NAME
-    __ZAPPY_PROJECT_NAME_SNAKE___test_host
+      __ZAPPY_PROJECT_NAME_SNAKE___test_host
     INCLUDE_DIRECTORIES
       ${CMAKE_CURRENT_SOURCE_DIR}/include
     SRCS
