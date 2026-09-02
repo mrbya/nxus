@@ -47,6 +47,7 @@ indexmap                = { version = "2.14", features = ["serde"] }
 symlink                 = { version = "0.1" }
 zappy-core              = { version = "0.1" }
 zappy-fs                = { version = "0.1" }
+include_dir             = { version = "0.7" }
 # Dev deps
 criterion               = { version = "0.8" }
 pretty_assertions       = { version = "1" }

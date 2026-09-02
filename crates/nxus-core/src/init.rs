@@ -1,4 +1,4 @@
-use std::fs;
+use std::fs::{self, create_dir_all};
 use std::path::Path;
 
 use crate::config::{
@@ -9,6 +9,19 @@ use crate::config::{
     TEST_PROFILE_NAME,
 };
 use crate::{CoreError, CoreResult};
+
+use include_dir::{include_dir, Dir, DirEntry};
+use zappy_core::builtins::PROJECT_NAME;
+use zappy_core::{
+    resolve_variables, Manifest, VariableResolutionInput, VariableValue, VariableValueMap,
+};
+use zappy_fs::{
+    build_generation_plan, materialize_generation_plan, BuildPlanInput, DiscoveredTemplate,
+    MaterializationOptions, TemplateSearchPath, TemplateSearchPathKind,
+};
+
+/// Project template for `init project`.
+static PROJECT_TEMPLATE: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/src/project_template");
 
 /// Initializes the current directory as a config-only Nxus project.
 ///
@@ -33,40 +46,79 @@ pub fn init_project_config(project_dir: &Path) -> CoreResult<()> {
 /// would be overwritten, or an underlying I/O operation fails.
 pub fn init_project(project_dir: &Path) -> CoreResult<()> {
     if project_dir.exists() {
-        ensure_directory(project_dir)?;
-        ensure_empty_directory(project_dir)?;
-    } else {
-        fs::create_dir_all(project_dir)?;
+        return Err(CoreError::PathAlreadyExists {
+            path: project_dir.to_path_buf(),
+        });
     }
 
-    let nxus_toml = project_dir.join("nxus.toml");
-    let gitignore = project_dir.join(".gitignore");
-    let app_root = project_dir.join("app");
-    let cmake_lists = app_root.join("CMakeLists.txt");
-    let kconfig = app_root.join("Kconfig");
-    let common_config = app_root.join("config").join("common.config");
-    let sim_overlay = app_root.join("config").join("sim.overlay");
-    let test_overlay = app_root.join("config").join("test.overlay");
+    let temp_dir = tempfile::TempDir::new()?;
 
-    ensure_absent(&nxus_toml)?;
-    ensure_absent(&gitignore)?;
-    ensure_absent(&cmake_lists)?;
-    ensure_absent(&kconfig)?;
-    ensure_absent(&common_config)?;
-    ensure_absent(&sim_overlay)?;
-    ensure_absent(&test_overlay)?;
+    extract_dir(&PROJECT_TEMPLATE, temp_dir.path())?;
 
-    fs::create_dir_all(app_root.join("app"))?;
-    fs::create_dir_all(app_root.join("lib"))?;
-    fs::create_dir_all(app_root.join("test"))?;
+    let template_path = temp_dir.path().to_path_buf();
+    let manifest_path = template_path.join("zappy.toml");
+    let manifest = Manifest::load_from_path(&manifest_path)?;
 
-    write_file(&nxus_toml, &render_nxus_toml())?;
-    write_file(&gitignore, GITIGNORE)?;
-    write_file(&cmake_lists, CMAKE_LISTS)?;
-    write_file(&kconfig, KCONFIG)?;
-    write_file(&common_config, COMMON_CONFIG)?;
-    write_file(&sim_overlay, SIM_OVERLAY)?;
-    write_file(&test_overlay, TEST_OVERLAY)?;
+    let mut builtin_variables = VariableValueMap::new();
+    let project_name = project_dir.file_name().map_or_else(
+        || String::from("nuttx-app"),
+        |name| String::from(name.to_str().unwrap_or("nuttx-app")),
+    );
+    builtin_variables.insert(
+        String::from(PROJECT_NAME),
+        VariableValue::String(project_name),
+    );
+
+    let template = DiscoveredTemplate {
+        search_path: TemplateSearchPath {
+            kind: TemplateSearchPathKind::Explicit,
+            path: template_path.clone(),
+            required: true,
+        },
+        template_dir: template_path,
+        manifest_path,
+        manifest,
+    };
+
+    let input = VariableResolutionInput {
+        explicit: VariableValueMap::new(),
+        interactive: VariableValueMap::new(),
+        user_defaults: VariableValueMap::new(),
+        builtins: builtin_variables,
+    };
+
+    let resolved = resolve_variables(&template.manifest.variables, &input)?;
+    let plan_input = BuildPlanInput {
+        template_dir: &template.template_dir,
+        manifest: &template.manifest,
+        variables: &resolved,
+        output_dir: project_dir.to_path_buf(),
+        force: false,
+    };
+
+    let plan = build_generation_plan(&plan_input).map_err(|error| CoreError::ZappyFs(*error))?;
+
+    create_dir_all(&plan.output_dir)?;
+    let summary = match materialize_generation_plan(&plan, MaterializationOptions { force: false })
+    {
+        Ok(summary) => summary,
+        Err(error) => return Err(CoreError::ZappyFs(*error)),
+    };
+
+    println!(
+        "Generated `{}` in {}",
+        &template.manifest.template.id.as_str(),
+        plan.output_dir.display()
+    );
+
+    println!(
+        "Created {} directories, wrote {} text files, copied {} binary files, skipped {} \
+             paths.",
+        summary.directories_created,
+        summary.text_files_written,
+        summary.binary_files_copied,
+        summary.skipped,
+    );
 
     Ok(())
 }
@@ -111,6 +163,32 @@ fn write_file(path: &Path, contents: &str) -> CoreResult<()> {
     }
 
     fs::write(path, contents)?;
+    Ok(())
+}
+
+/// Recursively extracts en embedded directory.
+fn extract_dir(dir: &Dir<'_>, destination_root: &Path) -> CoreResult<()> {
+    for entry in dir.entries() {
+        match *entry {
+            DirEntry::Dir(ref child_dir) => {
+                let destination = destination_root.join(child_dir.path());
+
+                fs::create_dir_all(&destination)?;
+                extract_dir(child_dir, destination_root)?;
+            }
+
+            DirEntry::File(ref file) => {
+                let destination = destination_root.join(file.path());
+
+                if let Some(parent) = destination.parent() {
+                    fs::create_dir_all(parent)?;
+                }
+
+                fs::write(&destination, file.contents())?;
+            }
+        }
+    }
+
     Ok(())
 }
 
@@ -163,24 +241,11 @@ rev = "{DEFAULT_NUTTX_APPS_REV}"
     )
 }
 
-/// Default project `.gitignore` content for Nxus-managed outputs.
-const GITIGNORE: &str = "build/\nworkspace/\n";
-/// Minimal application root `CMakeLists.txt` scaffold.
-const CMAKE_LISTS: &str = "# Nxus-managed NuttX application root.\n";
-/// Minimal application root `Kconfig` scaffold.
-const KCONFIG: &str = "menu \"Nxus Project\"\nendmenu\n";
-/// Shared profile config overlay scaffold.
-const COMMON_CONFIG: &str = "# Shared configuration applied to every Nxus profile.\n";
-/// Default simulator overlay scaffold.
-const SIM_OVERLAY: &str = "# Extra settings for the default simulator profile.\n";
-/// Default test overlay scaffold.
-const TEST_OVERLAY: &str = "# Extra settings for the default test profile.\n";
-
 #[cfg(test)]
 mod tests {
     use std::fs;
 
-    use crate::{CoreError, init_project, init_project_config, load_config};
+    use crate::{init_project, init_project_config, load_config, CoreError};
 
     #[test]
     fn init_project_config_writes_minimal_config() {

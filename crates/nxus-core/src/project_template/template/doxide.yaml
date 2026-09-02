@@ -1,0 +1,5 @@
+title: __ZAPPY_PROJECT_NAME__
+description: <add project description here>
+files:
+  - "app/**/*.hpp"
+output: build/docs/api

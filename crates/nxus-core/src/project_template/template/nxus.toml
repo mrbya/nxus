@@ -1,0 +1,42 @@
+# Global project config.
+[project]
+default_profile = "sim"
+
+# Build dir config.
+[build]
+root = "build"
+link_compile_commands = true
+
+# Project-local `NuttX` workspace config.
+# Pin the `nuttx` and `nuttx_apps` revisions to the baseline you need.
+[workspace]
+root = "workspace"
+
+[workspace.nuttx]
+# src = "https://github.com/apache/nuttx.git"
+rev = "master"
+
+[workspace.nuttx_apps]
+# src = "https://github.com/apache/nuttx-apps.git"
+rev = "master"
+
+# Sim profile overrides.
+# [profile.sim]
+# arch = "sim"
+# family = "sim"
+# board = "sim"
+# config_base = "nsh"
+
+# Test profile overrides.
+# [profile.test]
+# arch = "sim"
+# family = "sim"
+# board = "sim"
+# config_base = "nsh"
+
+# Custom profile definitions
+# [profile.prod]
+# arch = "arm"
+# family = "stm32f7"
+# board = "nucleo-f767zi"
+# config_base = "evalos"

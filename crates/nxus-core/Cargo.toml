@@ -18,10 +18,13 @@ serde.workspace         = true
 toml.workspace          = true
 indexmap.workspace      = true
 symlink.workspace       = true
+include_dir.workspace   = true
+tempfile.workspace      = true
+zappy-core.workspace    = true
+zappy-fs.workspace      = true
 spinners                = { workspace = true, optional = true }
 
 [dev-dependencies]
-tempfile.workspace      = true
 
 [features]
 default = ["spinners"]

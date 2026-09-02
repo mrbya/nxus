@@ -17,3 +17,6 @@
 
 # Nxus config file
 nxus.toml
+
+# Project template config exception
+!/crates/nxus-core/src/project_template/template/nxus.toml

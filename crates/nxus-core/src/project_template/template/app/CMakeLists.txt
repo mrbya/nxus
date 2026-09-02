@@ -1,0 +1,19 @@
+FILE(GLOB app_sources ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
+set(includes ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
+if(CONFIG___ZAPPY_PROJECT_NAME_SCREAMING__)
+  nuttx_add_application(
+    NAME
+      ${CONFIG___ZAPPY_PROJECT_NAME_SCREAMING___PROGNAME}
+    INCLUDE_DIRECTORIES
+      ${CMAKE_CURRENT_SOURCE_DIR}/include
+    SRCS
+      ${app_sources}
+    STACKSIZE
+      ${CONFIG___ZAPPY_PROJECT_NAME_SCREAMING___STACKSIZE}
+    PRIORITY
+      ${CONFIG___ZAPPY_PROJECT_NAME_SCREAMING___PRIORITY}
+    # DEPENDS
+    #   lib1
+  )
+endif()

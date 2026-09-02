@@ -12,27 +12,11 @@ root = "template"
 
 # Template variable definitions.
 [variables]
-test_var = {
-    prompt = "Test variable",
-    transforms = ["raw", "kebab", "snake", "pascal", "camel", "screaming_snake", "upper", "lower"],
-    placeholders = {
-        raw             = "__TEST_VAR__",
-        kebab           = "__TEST_VAR_KEBAB__",
-        snake           = "__TEST_VAR_SNAKE__",
-        pascal          = "__TEST_VAR_PASCAL__",
-        camel           = "__TEST_VAR_CAMEL__",
-        screaming_snake = "__TEST_VAR_SCREAMING__",
-        upper           = "__TEST_VAR_UPPER__",
-        lower           = "__TEST_VAR_LOWER__",
-   }
-}
-
-include_optional = { default = false }
 
 # Template file path config.
 [paths]
-exclude = [".git", ".DS_Store", "target", "node_modules"]
-binary_extensions = ["png", "jpg", "jpeg", "gif", "ico", "pdf", "zip"]
+exclude = [".git", ".DS_Store", "target", "build", "workspace", "public"]
+binary_extensions = ["png", "jpg", "jpeg", "gif", "ico", "pdf", "zip", "js", "mjs", "html", "css"]
 binary_files = []
 
 # Conditional include paths.

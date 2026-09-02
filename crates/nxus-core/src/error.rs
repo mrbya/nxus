@@ -2,6 +2,7 @@ use std::path::PathBuf;
 use std::process::ExitStatus;
 
 use thiserror::Error;
+use zappy_fs::FsError;
 
 /// Result type alias used by `nxus-core`.
 pub type CoreResult<T> = std::result::Result<T, CoreError>;
@@ -152,4 +153,12 @@ pub enum CoreError {
         /// Resolved artifact path.
         path: PathBuf,
     },
+
+    /// Zappy-core error.
+    #[error(transparent)]
+    ZappyCore(#[from] zappy_core::CoreError),
+
+    /// Zappy-fs error.
+    #[error(transparent)]
+    ZappyFs(#[from] zappy_fs::FsError),
 }

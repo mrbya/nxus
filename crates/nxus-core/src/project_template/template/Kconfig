@@ -1,0 +1,6 @@
+menu "__ZAPPY_PROJECT_NAME__ applications"
+
+    source "$APPSDIR/external/app/Kconfig"
+    source "$APPSDIR/external/test/host/Kconfig"
+
+endmenu

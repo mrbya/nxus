@@ -1,0 +1,91 @@
+BasedOnStyle: Google
+
+Language: Cpp
+Standard: c++20
+
+# Rustfmt-ish: Rust defaults to 4-space indentation and compact K&R-ish braces.
+ColumnLimit: 100
+UseTab: Never
+IndentWidth: 4
+AccessModifierOffset: -4
+
+# Scoping / braces
+BreakBeforeBraces: Attach
+AllowShortBlocksOnASingleLine: Never
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortEnumsOnASingleLine: false
+AllowShortLambdasOnASingleLine: Empty
+
+# Function calls / declarations.
+BinPackArguments: false
+BinPackParameters: false
+AllowAllArgumentsOnNextLine: true
+AllowAllParametersOfDeclarationOnNextLine: true
+
+# Initializers / lists.
+Cpp11BracedListStyle: true
+ConstructorInitializerIndentWidth: 4
+PackConstructorInitializers: Never
+
+# Includes.
+IncludeBlocks: Regroup
+SortIncludes: CaseSensitive
+IncludeCategories:
+  # 1. C++ standard headers: <algorithm>, <cstdint>, <string_view>, ...
+  - Regex: '^<[^/>.]+>$'
+    Priority: 1
+    SortPriority: 0
+
+  # 2. NuttX includes.
+  - Regex: '^<nuttx/.*>'
+    Priority: 2
+    SortPriority: 0
+
+  # 3. SMH public/module headers.
+  - Regex: '^<smh/.*>'
+    Priority: 3
+    SortPriority: 0
+
+  # 4. Other C++ project/library headers.
+  - Regex: '^<.*\.(hxx|hpp|hh)>$'
+    Priority: 4
+    SortPriority: 0
+
+  # 5. C/POSIX/vendor system headers.
+  - Regex: '^<.*\.h>$'
+    Priority: 5
+    SortPriority: 0
+
+  # 6. Local quoted headers.
+  - Regex: '^".*\.(hxx|hpp|hh|h)"$'
+    Priority: 6
+    SortPriority: 0
+
+  # 7. Catch-all.
+  - Regex: '.*'
+    Priority: 7
+    SortPriority: 0
+
+# Pointers / references.
+DerivePointerAlignment: false
+PointerAlignment: Left
+ReferenceAlignment: Left
+
+# Alignment.
+AlignConsecutiveAssignments: None
+AlignConsecutiveDeclarations: None
+AlignOperands: Align
+AlignTrailingComments: true
+
+# Comments.
+ReflowComments: false
+FixNamespaceComments: true
+
+# Misc.
+SpaceBeforeParens: ControlStatements
+SpacesInParentheses: false
+SpacesInSquareBrackets: false
+
