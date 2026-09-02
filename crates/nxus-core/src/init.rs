@@ -2,6 +2,17 @@ use std::fs::{self, create_dir_all};
 use std::path::Path;
 use std::process::Command as OsCommand;
 
+use chrono::Datelike;
+use include_dir::{Dir, DirEntry, include_dir};
+use zappy_core::builtins::{PROJECT_NAME, USER, YEAR};
+use zappy_core::{
+    Manifest, VariableResolutionInput, VariableValue, VariableValueMap, resolve_variables,
+};
+use zappy_fs::{
+    BuildPlanInput, DiscoveredTemplate, MaterializationOptions, TemplateSearchPath,
+    TemplateSearchPathKind, build_generation_plan, materialize_generation_plan,
+};
+
 use crate::config::{
     DEFAULT_BUILD_ROOT, DEFAULT_NUTTX_APPS_REV, DEFAULT_NUTTX_APPS_SRC, DEFAULT_NUTTX_REV,
     DEFAULT_NUTTX_SRC, DEFAULT_PROJECT_DEFAULT_PROFILE, DEFAULT_SIM_ARCH, DEFAULT_SIM_BOARD,
@@ -10,17 +21,6 @@ use crate::config::{
     TEST_PROFILE_NAME,
 };
 use crate::{CoreError, CoreResult};
-
-use chrono::Datelike;
-use include_dir::{include_dir, Dir, DirEntry};
-use zappy_core::builtins::{PROJECT_NAME, USER, YEAR};
-use zappy_core::{
-    resolve_variables, Manifest, VariableResolutionInput, VariableValue, VariableValueMap,
-};
-use zappy_fs::{
-    build_generation_plan, materialize_generation_plan, BuildPlanInput, DiscoveredTemplate,
-    MaterializationOptions, TemplateSearchPath, TemplateSearchPathKind,
-};
 
 /// Project template for `init project`.
 static PROJECT_TEMPLATE: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/src/project_template");
@@ -132,8 +132,7 @@ pub fn init_project(project_dir: &Path) -> CoreResult<()> {
     );
 
     println!(
-        "Created {} directories, wrote {} text files, copied {} binary files, skipped {} \
-             paths.",
+        "Created {} directories, wrote {} text files, copied {} binary files, skipped {} paths.",
         summary.directories_created,
         summary.text_files_written,
         summary.binary_files_copied,
@@ -289,7 +288,7 @@ rev = "{DEFAULT_NUTTX_APPS_REV}"
 mod tests {
     use std::fs;
 
-    use crate::{init_project, init_project_config, load_config, CoreError};
+    use crate::{CoreError, init_project, init_project_config, load_config};
 
     #[test]
     fn init_project_config_writes_minimal_config() {
