@@ -32,6 +32,18 @@ pub fn build_dir(cfg: &ResolvedConfig, profile: &str) -> PathBuf {
     build_root(cfg).join(profile)
 }
 
+/// Returns path to profile-specific `compile_commands.json`.
+#[must_use]
+pub fn compile_commands_for_profile(cfg: &ResolvedConfig, profile: &str) -> PathBuf {
+    build_dir(cfg, profile).join("compile_commands.json")
+}
+
+/// Returns path to `compile_commands.json` link at build root dir.
+#[must_use]
+pub fn compile_commands_link(cfg: &ResolvedConfig) -> PathBuf {
+    build_root(cfg).join("compile_commands.json")
+}
+
 /// Returns path to the standard `NuttX` executable output.
 #[must_use]
 pub fn firmware_elf(cfg: &ResolvedConfig, profile: &str) -> PathBuf {

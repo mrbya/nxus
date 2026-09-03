@@ -2,7 +2,8 @@ use std::fs;
 use std::process::ExitCode;
 
 use nxus_core::{
-    Cmd, CoreError, ResolvedConfig, ensure_workspace, generate_config, link_app, link_config, paths,
+    Cmd, CoreError, ResolvedConfig, ensure_workspace, generate_config, link_app,
+    link_compile_commands, link_config, paths,
 };
 
 /// Nxus command: config.
@@ -60,6 +61,11 @@ pub fn config(cfg: &ResolvedConfig) -> ExitCode {
         return ExitCode::FAILURE;
     }
 
+    if let Err(error) = link_compile_commands(cfg, &cfg.profile) {
+        eprintln!("{error}");
+        return ExitCode::FAILURE;
+    }
+
     ExitCode::SUCCESS
 }
 
@@ -111,6 +117,13 @@ mod tests {
         .expect("board config dir should be created");
         fs::write(paths::board_config_base(&cfg), "CONFIG_BASE=y\n")
             .expect("base config should be created");
+        fs::create_dir_all(paths::build_dir(&cfg, &cfg.profile))
+            .expect("build dir should be created");
+        fs::write(
+            paths::build_dir(&cfg, &cfg.profile).join("compile_commands.json"),
+            "{}",
+        )
+        .expect("file should be written");
 
         assert_eq!(config(&cfg), ExitCode::SUCCESS);
         assert!(cfg.build_dir.exists());

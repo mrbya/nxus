@@ -336,6 +336,11 @@ fn config_creates_links_generated_config_and_build_dir() {
     let fixture = ProjectFixture::new();
     fixture.prepare_config_command();
 
+    write_file(
+        &fixture.build_dir("prod").join("compile_commands.json"),
+        "{}",
+    );
+
     fixture
         .command()
         .args(["-d", "-p", "prod", "config"])
@@ -345,6 +350,10 @@ fn config_creates_links_generated_config_and_build_dir() {
     assert!(fixture.build_dir("prod").exists());
     assert!(fixture.app_link().exists());
     assert!(fixture.generated_config_file("prod").is_file());
+    write_file(
+        &fixture.build_dir("prod").join("compile_commands.json"),
+        "{}",
+    );
     assert!(
         fixture
             .board_config_link("arm", "stm32f7", "nucleo-f767zi", "prod")
@@ -357,6 +366,10 @@ fn build_alias_honors_global_flags_and_prints_ninja_command() {
     let fixture = ProjectFixture::new();
 
     fs::create_dir_all(fixture.build_dir("prod")).expect("prod build dir should be created");
+    write_file(
+        &fixture.build_dir("prod").join("compile_commands.json"),
+        "{}",
+    );
 
     fixture
         .command()
@@ -402,6 +415,10 @@ fn run_alias_prints_selected_profile_binary_path() {
     let fixture = ProjectFixture::new();
 
     fs::create_dir_all(fixture.build_dir("prod")).expect("prod build dir should be created");
+    write_file(
+        &fixture.build_dir("prod").join("compile_commands.json"),
+        "{}",
+    );
 
     let assert = fixture
         .command()
@@ -439,6 +456,10 @@ fn run_rebuilds_when_requested_even_if_firmware_exists() {
 
     fs::create_dir_all(fixture.build_dir("prod")).expect("prod build dir should be created");
     write_file(&fixture.firmware_elf("prod"), "elf\n");
+    write_file(
+        &fixture.build_dir("prod").join("compile_commands.json"),
+        "{}",
+    );
 
     let assert = fixture
         .command()
@@ -457,6 +478,10 @@ fn sim_command_uses_sim_profile_binary_path() {
     let fixture = ProjectFixture::new();
 
     fs::create_dir_all(fixture.build_dir("sim")).expect("sim build dir should be created");
+    write_file(
+        &fixture.build_dir("sim").join("compile_commands.json"),
+        "{}",
+    );
 
     fixture
         .command()
@@ -472,6 +497,10 @@ fn sim_rebuild_flag_propagates_to_run_behavior() {
 
     fs::create_dir_all(fixture.build_dir("sim")).expect("sim build dir should be created");
     write_file(&fixture.firmware_elf("sim"), "elf\n");
+    write_file(
+        &fixture.build_dir("sim").join("compile_commands.json"),
+        "{}",
+    );
 
     let assert = fixture
         .command()
@@ -490,6 +519,10 @@ fn test_alias_uses_test_profile_binary_path() {
     let fixture = ProjectFixture::new();
 
     fs::create_dir_all(fixture.build_dir("test")).expect("test build dir should be created");
+    write_file(
+        &fixture.build_dir("test").join("compile_commands.json"),
+        "{}",
+    );
 
     fixture
         .command()
@@ -654,6 +687,10 @@ fn flash_rebuilds_when_requested_even_if_firmware_exists() {
 
     fs::create_dir_all(fixture.build_dir("prod")).expect("prod build dir should be created");
     write_file(&fixture.firmware_elf("prod"), "elf\n");
+    write_file(
+        &fixture.build_dir("prod").join("compile_commands.json"),
+        "{}",
+    );
 
     let assert = fixture
         .command()
@@ -673,6 +710,10 @@ fn flash_fails_when_profile_has_no_flash_configuration() {
     let fixture = ProjectFixture::new();
 
     fs::create_dir_all(fixture.build_dir("sim")).expect("sim build dir should be created");
+    write_file(
+        &fixture.build_dir("sim").join("compile_commands.json"),
+        "{}",
+    );
 
     fixture
         .command()

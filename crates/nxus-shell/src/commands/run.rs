@@ -48,6 +48,8 @@ mod tests {
     use std::fs;
     use std::process::ExitCode;
 
+    use nxus_core::paths;
+
     use crate::commands::run_binary;
     use crate::tests::resolved_config;
 
@@ -69,6 +71,11 @@ mod tests {
         let cfg = resolved_config(temp_dir.path());
 
         fs::create_dir_all(&cfg.build_dir).expect("build dir should be created");
+        fs::write(
+            paths::build_dir(&cfg, &cfg.profile).join("compile_commands.json"),
+            "{}",
+        )
+        .expect("file should be written");
 
         assert_eq!(run_binary(&cfg), ExitCode::SUCCESS);
     }

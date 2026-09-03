@@ -89,7 +89,8 @@ pub use exec::{Cmd, Runner};
 pub use flash::resolve_flash_command;
 pub use init::{init_project, init_project_config};
 pub use workspace::{
-    ensure_workspace, generate_config, link_app, link_config, unlink_app, unlink_config,
+    ensure_workspace, generate_config, link_app, link_compile_commands, link_config, unlink_app,
+    unlink_compile_commands, unlink_config,
 };
 
 // Test helpers and fixtures.

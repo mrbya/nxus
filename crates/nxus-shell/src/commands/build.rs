@@ -1,6 +1,6 @@
 use std::process::ExitCode;
 
-use nxus_core::{Cmd, CoreError, ResolvedConfig, paths};
+use nxus_core::{Cmd, CoreError, ResolvedConfig, link_compile_commands, paths};
 
 use crate::commands::config;
 
@@ -14,15 +14,28 @@ pub fn build(cfg: &ResolvedConfig) -> ExitCode {
         return ExitCode::FAILURE;
     }
 
-    if !build_dir_present && config(cfg) == ExitCode::FAILURE {
-        return ExitCode::FAILURE;
-    }
+    let ran_config = if build_dir_present {
+        false
+    } else {
+        if config(cfg) == ExitCode::FAILURE {
+            return ExitCode::FAILURE;
+        }
+        true
+    };
 
     let cmd = Cmd::new("ninja").arg("-C").arg(build_dir);
 
     if let Err(error) = cfg
         .runner
         .run(&cmd, &format!("Building project for `{}`", cfg.profile))
+    {
+        eprintln!("{error}");
+        return ExitCode::FAILURE;
+    }
+
+    if cfg.link_compile_commands
+        && !ran_config
+        && let Err(error) = link_compile_commands(cfg, &cfg.profile)
     {
         eprintln!("{error}");
         return ExitCode::FAILURE;
@@ -35,6 +48,8 @@ pub fn build(cfg: &ResolvedConfig) -> ExitCode {
 mod tests {
     use std::fs;
     use std::process::ExitCode;
+
+    use nxus_core::paths;
 
     use crate::commands::build;
     use crate::tests::resolved_config;
@@ -57,6 +72,11 @@ mod tests {
         let cfg = resolved_config(temp_dir.path());
 
         fs::create_dir_all(&cfg.build_dir).expect("build dir should be created");
+        fs::write(
+            paths::build_dir(&cfg, &cfg.profile).join("compile_commands.json"),
+            "{}",
+        )
+        .expect("file should be written");
 
         assert_eq!(build(&cfg), ExitCode::SUCCESS);
     }

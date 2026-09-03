@@ -81,6 +81,13 @@ pub enum CoreError {
         path: PathBuf,
     },
 
+    /// Path missing.
+    #[error("`{path}` does not exist")]
+    PathMissing {
+        /// Selected path.
+        path: PathBuf,
+    },
+
     /// Selected path is not a git repository.
     #[error("`{path}` is not a git repository")]
     PathNotRepo {

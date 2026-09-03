@@ -35,6 +35,11 @@ mod tests {
         let cfg = resolved_config(temp_dir.path());
 
         fs::create_dir_all(paths::build_dir(&cfg, "sim")).expect("sim build dir should exist");
+        fs::write(
+            paths::build_dir(&cfg, &cfg.profile).join("compile_commands.json"),
+            "{}",
+        )
+        .expect("file should be written");
 
         assert_eq!(sim(&cfg), ExitCode::SUCCESS);
     }

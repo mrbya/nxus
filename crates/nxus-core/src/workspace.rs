@@ -1,7 +1,7 @@
 use std::fs;
 use std::path::Path;
 
-use symlink::{remove_symlink_auto, symlink_dir};
+use symlink::{remove_symlink_auto, symlink_auto, symlink_dir};
 
 use crate::{Cmd, CoreError, CoreResult, ProfileConfig, ResolvedConfig, Runner, paths};
 
@@ -204,6 +204,85 @@ pub fn unlink_config(
             remove_symlink_auto(config_link)?;
         }
     }
+
+    Ok(())
+}
+
+/// Links `compile_commands.json` from a specific profile build dir to build dir root.
+///
+/// # Errors
+/// Returns:
+/// - [`CoreError::PathNotDir`] if build root dir or build dir is not a dir,
+/// - [`CoreError::PathNotFile`] if the target `compile_commands.json` path is not a file,
+/// - [`CoreError::PathMissing`] if the target `compile_commands.json` is missing,
+/// - [`CoreError::PathNotSymlink`] if `compile_commands` link exists and is not a file,
+/// - [`CoreError::Io`] on underlying I/O operation failure.
+pub fn link_compile_commands(cfg: &ResolvedConfig, profile_name: &str) -> CoreResult<()> {
+    if !cfg.link_compile_commands {
+        return Ok(());
+    }
+
+    let build_root = paths::build_root(cfg);
+    let build_dir = paths::build_dir(cfg, profile_name);
+    let build_dir_present = build_dir.exists();
+
+    if build_root.exists() && !build_root.is_dir() {
+        return Err(CoreError::PathNotDir { path: build_root });
+    }
+
+    if build_dir_present && !build_dir.is_dir() {
+        return Err(CoreError::PathNotDir { path: build_dir });
+    }
+
+    if build_dir_present {
+        let link = paths::compile_commands_link(cfg);
+        let compile_commands = paths::compile_commands_for_profile(cfg, &cfg.profile);
+        let link_present = link.exists();
+        let compile_commands_present = compile_commands.exists();
+
+        if link_present && !link.is_symlink() {
+            return Err(CoreError::PathNotSymlink { path: link });
+        }
+
+        if link_present && link.is_symlink() {
+            remove_symlink_auto(&link)?;
+        }
+
+        if !compile_commands_present {
+            return Err(CoreError::PathMissing {
+                path: compile_commands,
+            });
+        }
+
+        if compile_commands_present && !compile_commands.is_file() {
+            return Err(CoreError::PathNotFile {
+                path: compile_commands,
+            });
+        }
+
+        symlink_auto(compile_commands, link)?;
+    }
+
+    Ok(())
+}
+
+/// Unlinks `compile_commands.json` from build dir root.
+///
+/// # Errors
+/// Returns [`CoreError::PathNotSymlink`] if `compile_commands.json` present in build root dir but
+/// is not a symlink, or [`CoreError::Io`] on underlying I/O operation failure.
+pub fn unlink_compile_commands(cfg: &ResolvedConfig) -> CoreResult<()> {
+    if !cfg.link_compile_commands {
+        return Ok(());
+    }
+
+    let link = paths::compile_commands_link(cfg);
+
+    if link.exists() && !link.is_symlink() {
+        return Err(CoreError::PathNotSymlink { path: link });
+    }
+
+    remove_symlink_auto(link)?;
 
     Ok(())
 }
