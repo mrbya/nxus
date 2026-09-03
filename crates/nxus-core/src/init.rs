@@ -280,6 +280,15 @@ rev = "{DEFAULT_NUTTX_APPS_REV}"
 # family = "stm32f7"
 # board = "nucleo-f767zi"
 # config_base = "evalos"
+
+# Custom project commands.
+#
+# Run with:
+#   nxus exec <command>
+#
+# [command.size]
+# command = "arm-none-eabi-size"
+# args = ["{{elf}}"]
 "#
     )
 }

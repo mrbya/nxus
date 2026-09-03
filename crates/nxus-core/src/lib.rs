@@ -63,6 +63,8 @@
     clippy::verbose_file_reads
 )]
 
+/// Configured command resolution.
+pub(crate) mod command;
 /// Config resolution.
 pub(crate) mod config;
 /// Nux core error types.
@@ -79,6 +81,7 @@ pub mod paths;
 pub(crate) mod workspace;
 
 // Re-exports.
+pub use command::resolve_command;
 pub use config::{
     CommandConfig, ConfigContext, DEFAULT_NUTTX_APPS_REV, DEFAULT_NUTTX_APPS_SRC,
     DEFAULT_NUTTX_REV, DEFAULT_NUTTX_SRC, NxusConfig, ProfileConfig, ProfileSelection,

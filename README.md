@@ -8,8 +8,8 @@
 - [Installation](#installation)
 - [Usage](#usage)
   * [Project layout](#project-layout)
+  * [Project commands](#project-commands)
   * [Flash configuration](#flash-configuration)
-- [Nxus expands placeholders before executing the configured process, keeps arguments as distinct process arguments, and reports unknown placeholders or missing artifacts as errors.](#nxus-expands-placeholders-before-executing-the-configured-process-keeps-arguments-as-distinct-process-arguments-and-reports-unknown-placeholders-or-missing-artifacts-as-errors)
 - [Development](#development)
   * [Prequisites](#prequisites)
   * [Getting started](#getting-started)
@@ -42,6 +42,7 @@ nxus <COMMAND>
 Commands:
   init         Initialize Nxus config or scaffold a project
   build        Build project for a specific profile
+  exec         Execute a configured project command
   flash        Flash project binary for a specific profile
   menuconfig   Open Kconfig config TUI for a specific profile
   sim          Run the default simulator profile
@@ -72,6 +73,10 @@ nxus init project demo
 # Build or flash a profile
 nxus -p prod build
 nxus -p prod flash
+
+# Run a configured project command
+nxus exec size
+nxus exec objdump -- -d -S
 ```
 
 ### Project layout
@@ -95,6 +100,44 @@ demo/
 ```
 
 Run project commands from the application root, such as `demo/app`, so Nxus can discover the project config from `nxus.toml` in the parent directory while using the current directory as the app/config root.
+
+### Project commands
+
+Define project-level commands in `nxus.toml`:
+
+```toml
+[command.size]
+command = "arm-none-eabi-size"
+args = ["{elf}"]
+
+[command.docs]
+command = "cmake"
+args = ["--build", "{build_dir}", "--target", "docs"]
+```
+
+Run them with `nxus exec <command>`:
+
+```bash
+nxus exec size
+nxus exec docs
+nxus exec size -- --format=berkeley
+```
+
+Everything after `--` is forwarded as raw process arguments and appended after the configured `args` without shell parsing.
+
+Supported substitutions in the configured `command` and `args` fields:
+
+```text
+{project_dir}
+{workspace_dir}
+{build_dir}
+{profile}
+{elf}
+{bin}
+{hex}
+```
+
+`nxus exec` uses the selected profile, so `nxus -p prod exec size` expands placeholders against `prod` while `nxus exec size` uses the default profile. Artifact placeholders such as `{elf}` require the file to already exist, and `nxus exec` does not implicitly build before running the command. If you want to invoke a CMake target, configure `cmake --build {build_dir} --target <name>` as an ordinary project command.
 
 ### Flash configuration
 
@@ -130,6 +173,7 @@ Supported substitutions:
 ```
 
 Nxus expands placeholders before executing the configured process, keeps arguments as distinct process arguments, and reports unknown placeholders or missing artifacts as errors.
+
 ---
 
 ## Development

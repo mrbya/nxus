@@ -51,6 +51,7 @@ pub fn resolved_config(project_dir: &Path) -> ResolvedConfig {
         profile_selection: ProfileSelection::Default,
         profile: profile_name,
         profiles,
+        commands: IndexMap::new(),
         build_root: build_root.clone(),
         build_dir: build_root.join("sim"),
         link_compile_commands: true,

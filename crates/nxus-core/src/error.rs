@@ -144,16 +144,23 @@ pub enum CoreError {
         profile: String,
     },
 
+    /// Requested project command is not configured.
+    #[error("unknown project command: `{command}`")]
+    UnknownProjectCommand {
+        /// Command name.
+        command: String,
+    },
+
     /// Encountered an unsupported template placeholder.
-    #[error("unknown flash placeholder `{{{placeholder}}}`")]
-    UnknownPlaceholder {
+    #[error("unknown command placeholder `{{{placeholder}}}`")]
+    UnknownCommandPlaceholder {
         /// Placeholder name without braces.
         placeholder: String,
     },
 
-    /// A flash template referenced a required artifact that is missing.
-    #[error("required flash artifact `{artifact}` not found at `{path}`")]
-    FlashArtifactMissing {
+    /// A configured command referenced a required artifact that is missing.
+    #[error("required command artifact `{artifact}` not found at `{path}`")]
+    RequiredCommandArtifactMissing {
         /// Artifact placeholder name.
         artifact: String,
         /// Resolved artifact path.

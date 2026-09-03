@@ -20,6 +20,22 @@ root = "workspace"
 
 [workspace.nuttx_apps]
 
+[command.size]
+command = "arm-none-eabi-size"
+args = ["{elf}"]
+
+[command.objdump]
+command = "arm-none-eabi-objdump"
+args = ["-d", "{elf}"]
+
+[command.docs]
+command = "cmake"
+args = ["--build", "{build_dir}", "--target", "docs"]
+
+[command.foo]
+command = "tool"
+args = ["configured", "{profile}"]
+
 [profile.sim]
 arch = "sim"
 family = "sim"
@@ -721,4 +737,78 @@ fn flash_fails_when_profile_has_no_flash_configuration() {
         .assert()
         .failure()
         .stderr(predicate::str::contains("does not define a flash command"));
+}
+
+#[test]
+fn exec_fails_when_project_command_is_missing() {
+    let fixture = ProjectFixture::new();
+
+    fixture
+        .command()
+        .args(["exec", "missing"])
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains(
+            "unknown project command: `missing`",
+        ));
+}
+
+#[test]
+fn exec_uses_configured_command_in_dry_run_without_implicit_build() {
+    let fixture = ProjectFixture::new();
+
+    let assert = fixture
+        .command()
+        .args(["-d", "-vvv", "exec", "docs"])
+        .assert()
+        .success();
+
+    let stderr = String::from_utf8_lossy(&assert.get_output().stderr);
+    assert!(!stderr.contains("ninja -C"));
+    assert!(!stderr.contains("openocd"));
+    assert!(stderr.contains("cmake --build"));
+    assert!(stderr.contains("build/sim"));
+}
+
+#[test]
+fn exec_appends_runtime_args_after_configured_args() {
+    let fixture = ProjectFixture::new();
+
+    let assert = fixture
+        .command()
+        .args(["-d", "-vvv", "exec", "foo", "--", "runtime", "--flag"])
+        .assert()
+        .success();
+
+    let stderr = String::from_utf8_lossy(&assert.get_output().stderr);
+    assert!(stderr.contains("tool configured sim runtime --flag"));
+}
+
+#[test]
+fn exec_uses_selected_profile_for_placeholder_expansion() {
+    let fixture = ProjectFixture::new();
+
+    fs::create_dir_all(fixture.build_dir("prod")).expect("prod build dir should be created");
+    write_file(&fixture.firmware_elf("prod"), "elf\n");
+
+    fixture
+        .command()
+        .args(["-d", "-vvv", "-p", "prod", "exec", "size"])
+        .assert()
+        .success()
+        .stderr(predicate::str::contains("build/prod/nuttx"));
+}
+
+#[test]
+fn exec_fails_when_requested_artifact_is_missing() {
+    let fixture = ProjectFixture::new();
+
+    fixture
+        .command()
+        .args(["-d", "exec", "size"])
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains(
+            "required command artifact `elf` not found",
+        ));
 }

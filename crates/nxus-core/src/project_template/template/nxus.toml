@@ -45,3 +45,11 @@ flash = {
     args = ["-f", "board/st_nucleo_f7.cfg", "-c", "program {elf} verify reset exit"],
 }
 
+# Custom project commands.
+#
+# Run with:
+#   nxus exec <command>
+#
+# [command.size]
+# command = "arm-none-eabi-size"
+# args = ["{elf}"]

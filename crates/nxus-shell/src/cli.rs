@@ -1,3 +1,4 @@
+use std::ffi::OsString;
 use std::path::PathBuf;
 use std::process::ExitCode;
 
@@ -5,7 +6,7 @@ use clap::{Args, Parser, Subcommand};
 use nxus_core::{ProfileSelection, ResolvedConfig, discover_config, load_config};
 
 use crate::commands::{
-    build, clean, config, flash, init, menuconfig, profiles, run_binary, sim, test, workspace,
+    build, clean, config, exec, flash, init, menuconfig, profiles, run_binary, sim, test, workspace,
 };
 
 /// `nxus` CLI parser.
@@ -27,6 +28,10 @@ use crate::commands::{
 
     # Flash binary
     nxus -p prod flash
+
+    # Execute a configured project command
+    nxus exec size
+    nxus exec objdump -- -d -S
 
     # Run simulation and tests
     nxus sim
@@ -89,6 +94,9 @@ pub enum Command {
     #[command(alias = "f")]
     Flash,
 
+    /// Executes a project-defined command.
+    Exec(ExecArgs),
+
     /// Runs simulation in default simulation profile.
     #[command(alias = "s")]
     Sim,
@@ -140,6 +148,17 @@ pub struct InitArgs {
     /// Initialization subcommand.
     #[command(subcommand)]
     pub command: InitCommand,
+}
+
+/// Exec command args.
+#[derive(Clone, Args, Debug)]
+pub struct ExecArgs {
+    /// Configured project command name.
+    pub name: String,
+
+    /// Raw command arguments passed after `--`.
+    #[arg(last = true)]
+    pub args: Vec<OsString>,
 }
 
 /// Init subcommands.
@@ -218,6 +237,7 @@ pub fn run() -> ExitCode {
         Command::Menuconfig => menuconfig(&resolved),
         Command::Run => run_binary(&resolved),
         Command::Flash => flash(&resolved),
+        Command::Exec(args) => exec(&resolved, &args),
         Command::Sim => sim(&resolved),
         Command::Test => test(&resolved),
         Command::Workspace(args) => workspace(&resolved, &args),
@@ -227,9 +247,11 @@ pub fn run() -> ExitCode {
 
 #[cfg(test)]
 mod tests {
+    use std::ffi::OsString;
+
     use clap::Parser;
 
-    use crate::cli::{Cli, Command, InitArgs, InitCommand, WsCommand};
+    use crate::cli::{Cli, Command, ExecArgs, InitArgs, InitCommand, WsCommand};
 
     #[test]
     fn parse_build_command_with_global_flags() {
@@ -328,6 +350,63 @@ mod tests {
             Command::Init(InitArgs {
                 command: InitCommand::Project { path: None }
             })
+        ));
+    }
+
+    #[test]
+    fn parse_exec_command_without_runtime_args() {
+        let cli = Cli::try_parse_from(["nxus", "exec", "foo"]).expect("cli should parse");
+
+        assert!(matches!(
+            cli.command,
+            Command::Exec(ExecArgs { name, args }) if name == "foo" && args.is_empty()
+        ));
+    }
+
+    #[test]
+    fn parse_exec_command_with_runtime_args() {
+        let cli = Cli::try_parse_from(["nxus", "exec", "foo", "--", "arg1", "arg2"])
+            .expect("cli should parse");
+
+        assert!(matches!(
+            cli.command,
+            Command::Exec(ExecArgs { name, args })
+                if name == "foo" && args == vec![OsString::from("arg1"), OsString::from("arg2")]
+        ));
+    }
+
+    #[test]
+    fn parse_exec_command_with_hyphen_leading_runtime_args() {
+        let cli = Cli::try_parse_from(["nxus", "exec", "foo", "--", "-a", "--long", "value"])
+            .expect("cli should parse");
+
+        assert!(matches!(
+            cli.command,
+            Command::Exec(ExecArgs { name, args })
+                if name == "foo"
+                    && args
+                        == vec![
+                            OsString::from("-a"),
+                            OsString::from("--long"),
+                            OsString::from("value"),
+                        ]
+        ));
+    }
+
+    #[test]
+    fn parse_exec_command_with_global_flags() {
+        let cli = Cli::try_parse_from([
+            "nxus", "-p", "prod", "-d", "-vvv", "exec", "foo", "--", "-x",
+        ])
+        .expect("cli should parse");
+
+        assert!(cli.dry_run);
+        assert_eq!(cli.verbose, 3);
+        assert_eq!(cli.profile, Some(String::from("prod")));
+        assert!(matches!(
+            cli.command,
+            Command::Exec(ExecArgs { name, args })
+                if name == "foo" && args == vec![OsString::from("-x")]
         ));
     }
 }

@@ -9,6 +9,8 @@ pub mod build;
 pub mod clean;
 /// Configures `NuttX` for a specific profile.
 pub mod config;
+/// Executes a configured project command.
+pub mod exec;
 /// Flashes project binary built for a profile.
 pub mod flash;
 /// Initializes a Nxus project or config layout.
@@ -30,6 +32,7 @@ pub mod workspace;
 pub use build::build;
 pub use clean::clean;
 pub use config::config;
+pub use exec::exec;
 pub use flash::flash;
 pub use init::init;
 pub use menuconfig::menuconfig;

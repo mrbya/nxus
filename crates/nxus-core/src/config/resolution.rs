@@ -28,6 +28,8 @@ pub struct ResolvedConfig {
     pub profile: String,
     /// Profiles.
     pub profiles: IndexMap<String, ProfileConfig>,
+    /// Project-defined commands.
+    pub commands: IndexMap<String, CommandConfig>,
 
     /// Build dir related config values.
     /// Project build root path.
@@ -152,6 +154,7 @@ impl ResolvedConfig {
             },
             profile: selected,
             profiles: cfg.profiles.clone(),
+            commands: cfg.commands.clone(),
             build_root,
             build_dir,
             link_compile_commands,
@@ -247,6 +250,7 @@ mod tests {
         assert!(resolved.runner.dry_run);
         assert_eq!(resolved.profile_selection, ProfileSelection::Explicit);
         assert_eq!(resolved.profile, profile);
+        assert!(resolved.commands.is_empty());
         assert_eq!(resolved.build_root, PathBuf::from("/tmp/project/out"));
         assert_eq!(resolved.build_dir, PathBuf::from("/tmp/project/out/prod"));
         assert!(!resolved.link_compile_commands);
@@ -276,6 +280,7 @@ mod tests {
         assert!(!resolved.rebuild);
         assert_eq!(resolved.profile_selection, ProfileSelection::Default);
         assert_eq!(resolved.profile, String::from("sim"));
+        assert!(resolved.commands.is_empty());
         assert_eq!(resolved.build_dir, PathBuf::from("/tmp/project/build/sim"));
     }
 
@@ -312,7 +317,31 @@ mod tests {
         assert_eq!(selected.profile_selection, ProfileSelection::Explicit);
         assert!(selected.rebuild);
         assert_eq!(selected.profile, String::from("test"));
+        assert_eq!(selected.commands, resolved.commands);
         assert_eq!(selected.build_dir, resolved.build_dir);
         assert_eq!(selected.workspace_root, resolved.workspace_root);
+    }
+
+    #[test]
+    fn resolve_includes_project_defined_commands() {
+        let mut cfg = NxusConfig::new();
+        cfg.commands.insert(
+            String::from("size"),
+            crate::CommandConfig {
+                command: String::from("arm-none-eabi-size"),
+                args: vec![String::from("{elf}")],
+            },
+        );
+
+        let resolved = ResolvedConfig::resolve(false, false, 2, false, &context(), None, &cfg)
+            .expect("default config should resolve");
+
+        assert_eq!(
+            resolved.commands.get("size"),
+            Some(&crate::CommandConfig {
+                command: String::from("arm-none-eabi-size"),
+                args: vec![String::from("{elf}")],
+            })
+        );
     }
 }

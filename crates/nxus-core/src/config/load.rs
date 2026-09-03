@@ -140,4 +140,45 @@ args = ["-c", "program {elf} verify reset exit"]
             })
         );
     }
+
+    #[test]
+    fn load_config_parses_project_defined_commands() {
+        let temp_dir = tempfile::TempDir::new().expect("tempdir should be created");
+        fs::write(
+            temp_dir.path().join("nxus.toml"),
+            r#"[workspace.nuttx]
+rev = "master"
+
+[workspace.nuttx_apps]
+rev = "master"
+
+[command.size]
+command = "arm-none-eabi-size"
+args = ["{elf}"]
+
+[command.generate]
+command = "./tools/generate"
+"#,
+        )
+        .expect("config file should be created");
+
+        let commands = load_config(temp_dir.path())
+            .expect("config should load")
+            .commands;
+
+        assert_eq!(
+            commands.get("size"),
+            Some(&CommandConfig {
+                command: String::from("arm-none-eabi-size"),
+                args: vec![String::from("{elf}")],
+            })
+        );
+        assert_eq!(
+            commands.get("generate"),
+            Some(&CommandConfig {
+                command: String::from("./tools/generate"),
+                args: vec![],
+            })
+        );
+    }
 }

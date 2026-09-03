@@ -19,6 +19,10 @@ pub struct NxusConfig {
     /// Build profile configs.
     #[serde(default, alias = "profile")]
     pub profiles: IndexMap<String, ProfileConfig>,
+
+    /// Project-defined commands.
+    #[serde(default, alias = "command")]
+    pub commands: IndexMap<String, CommandConfig>,
 }
 
 /// Default project config `default_rpofile` value.
@@ -87,6 +91,10 @@ impl NxusConfig {
                     self.profiles.insert(name, prof_rhs);
                 }
             }
+        }
+
+        for (name, command) in rhs.commands {
+            self.commands.insert(name, command);
         }
 
         self
@@ -371,6 +379,8 @@ mod tests {
                 .board,
             String::from("sim")
         );
+
+        assert!(cfg.commands.is_empty());
     }
 
     #[test]
@@ -399,6 +409,14 @@ mod tests {
             ..Default::default()
         };
 
+        rhs.commands.insert(
+            String::from("size"),
+            CommandConfig {
+                command: String::from("arm-none-eabi-size"),
+                args: vec![String::from("{elf}")],
+            },
+        );
+
         rhs.profiles.insert(
             String::from("sim"),
             ProfileConfig {
@@ -418,6 +436,13 @@ mod tests {
         assert_eq!(merged.build.root, Some(String::from("right")));
         assert_eq!(merged.workspace.nuttx.src, Some(String::from("right")));
         assert_eq!(merged.workspace.nuttx.rev, Some(String::from("v0.0.0")));
+        assert_eq!(
+            merged.commands.get("size"),
+            Some(&CommandConfig {
+                command: String::from("arm-none-eabi-size"),
+                args: vec![String::from("{elf}")],
+            })
+        );
 
         let merged_sim = merged
             .profiles
@@ -432,6 +457,37 @@ mod tests {
             Some(CommandConfig {
                 command: String::from("openocd"),
                 args: vec![String::from("{elf}")],
+            })
+        );
+    }
+
+    #[test]
+    fn nxus_cfg_overlay_replaces_named_command_definitions() {
+        let mut lhs = NxusConfig::default();
+        lhs.commands.insert(
+            String::from("docs"),
+            CommandConfig {
+                command: String::from("cmake"),
+                args: vec![String::from("--build"), String::from("old")],
+            },
+        );
+
+        let mut rhs = NxusConfig::default();
+        rhs.commands.insert(
+            String::from("docs"),
+            CommandConfig {
+                command: String::from("ninja"),
+                args: vec![String::from("docs")],
+            },
+        );
+
+        let merged = lhs.overlay(rhs);
+
+        assert_eq!(
+            merged.commands.get("docs"),
+            Some(&CommandConfig {
+                command: String::from("ninja"),
+                args: vec![String::from("docs")],
             })
         );
     }
