@@ -25,8 +25,10 @@ pub fn exec(cfg: &ResolvedConfig, args: &ExecArgs) -> ExitCode {
     };
 
     cmd.args.extend(args.args.iter().cloned());
+    let mut runner = cfg.runner;
+    runner.verbose = 3;
 
-    if let Err(error) = cfg.runner.run(
+    if let Err(error) = runner.run(
         &cmd,
         &format!(
             "Executing project command `{}` for `{}`",
