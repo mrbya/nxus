@@ -50,6 +50,32 @@ flash = {
 # Run with:
 #   nxus exec <command>
 #
-# [command.size]
-# command = "arm-none-eabi-size"
-# args = ["{elf}"]
+[command.docs]
+command = "sh"
+args = ["-c", "doxide build && mkdocs build"]
+
+[command.docs-serve]
+command = "mkdocs"
+args = ["serve"]
+
+[command.fmt]
+command = "sh"
+args = [
+    "-c",
+    "find app -type f \\( -name '*.cpp' -o -name '*.hpp' \\) -print0 | xargs -0 clang-format --dry-run --Werror",
+]
+
+[command.fmt-check]
+command = "sh"
+args = [
+    "-c",
+    "find app lib -type f \\( -name '*.cpp' -o -name '*.hpp' \\) -print0 | xargs -0 clang-format --dry-run --Werror"
+]
+
+[command.check]
+command = "sh"
+args = [
+    "-c",
+    "run-clang-tidy -p \"{build_dir}\" -warnings-as-errors=\"*\" -quiet -header-filter=\"^$PWD/(app)/.*\" $(find app lib -type f -name '*.cpp' -print)"
+]
+
