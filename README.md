@@ -74,7 +74,8 @@ nxus init project demo
 nxus -p prod build
 nxus -p prod flash
 
-# Run a configured project command
+# Discover and run configured project commands
+nxus exec list
 nxus exec size
 nxus exec objdump -- -d -S
 ```
@@ -106,22 +107,29 @@ Run project commands from the application root, such as `demo/app`, so Nxus can 
 Define project-level commands in `nxus.toml`:
 
 ```toml
+# Report firmware size.
 [command.size]
 command = "arm-none-eabi-size"
 args = ["{elf}"]
 
+# Build the project documentation.
 [command.docs]
 command = "cmake"
 args = ["--build", "{build_dir}", "--target", "docs"]
 ```
 
-Run them with `nxus exec <command>`:
+List and run them with `nxus exec`:
 
 ```bash
+nxus exec list
 nxus exec size
 nxus exec docs
 nxus exec size -- --format=berkeley
 ```
+
+`nxus exec list` uses the single physical `#` comment line immediately above each `[command.<name>]` table as the optional description. Leading indentation, the first `#`, and surrounding whitespace are stripped. Blank lines break the association, multiline comments are not joined, and undocumented commands are still listed.
+
+The name `list` is reserved by the CLI for command discovery. If you configure `[command.list]`, it can still appear in `nxus exec list`, but `nxus exec list` always performs listing instead of executing that command.
 
 Everything after `--` is forwarded as raw process arguments and appended after the configured `args` without shell parsing.
 

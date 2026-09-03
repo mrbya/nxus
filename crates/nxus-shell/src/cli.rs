@@ -30,6 +30,7 @@ use crate::commands::{
     nxus -p prod flash
 
     # Execute a configured project command
+    nxus exec list
     nxus exec size
     nxus exec objdump -- -d -S
 
@@ -350,6 +351,16 @@ mod tests {
             Command::Init(InitArgs {
                 command: InitCommand::Project { path: None }
             })
+        ));
+    }
+
+    #[test]
+    fn parse_exec_list_command() {
+        let cli = Cli::try_parse_from(["nxus", "exec", "list"]).expect("cli should parse");
+
+        assert!(matches!(
+            cli.command,
+            Command::Exec(ExecArgs { name, args }) if name == "list" && args.is_empty()
         ));
     }
 

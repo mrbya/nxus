@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@OpenCode'
 created_date: '2026-09-03 13:11'
-updated_date: '2026-09-03 13:22'
+updated_date: '2026-09-03 16:45'
 labels:
   - cli
   - core
@@ -34,12 +34,11 @@ Add a small project-level custom command mechanism driven by `[command.<name>]` 
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-1. Extend `NxusConfig` with an ordered `commands` map using the existing `CommandConfig`, keep defaults empty, and update overlay and config-load tests so later layers replace whole command definitions while profile flash behavior stays intact.
-2. Move placeholder expansion and structured command-to-`Cmd` resolution out of `flash.rs` into a generic core module or API, expose named commands on `ResolvedConfig`, and keep flash-specific policy limited to "flash not configured" and existing build/rebuild behavior.
-3. Add a new `exec` shell command with Clap parsing that captures a command name plus raw trailing argv after `--`, looks up the configured project command from resolved config, appends runtime args after expanded configured args, and executes via `Runner` without implicit builds.
-4. Update the generated `nxus.toml` template, root config example/comments, README, and CLI help to document `[command.<name>]`, placeholder support, `nxus exec <name> -- <args...>`, profile selection, artifact requirements, and the fact that CMake targets are just regular configured commands.
-5. Add focused unit and integration coverage for config deserialization and overlay, generic command resolution, exec CLI parsing, dry-run runtime behavior, profile-sensitive placeholder expansion, missing command or artifact failures, and flash regression behavior.
-6. Run the repository validation flow with the established `just` recipes, fix any issues, confirm coverage remains above 90%, and finalize the Backlog record with notes, checked acceptance criteria, and a completion summary.
+1. Inspect the current `exec` command path, config discovery/loading APIs, and existing command-resolution tests to find the smallest place to reserve `list` without changing `nxus exec <command>` parsing or execution semantics.
+2. Add a small metadata reader in `nxus-core` that reads the discovered `nxus.toml`, uses `toml_edit` only for optional presentation metadata, and maps directly-adjacent single-line comments onto the already-authoritative configured command names from the resolved config.
+3. Implement `nxus exec list` in `nxus-shell` as a reserved built-in operation on the existing positional command model, formatting deterministic output from configured command order while ensuring no command execution, placeholder expansion, or build/tool invocation occurs.
+4. Add focused tests for adjacent-comment extraction rules, multi-command metadata mapping, reserved `list` behavior, parser/runtime regressions for normal `exec` usage, and end-to-end CLI listing output with no artifact or tool requirements.
+5. Update the relevant CLI/docs/template examples to document `nxus exec list`, the single-line adjacent-comment convention, blank-line behavior, and the reserved `list` name, then run the repository validation flow (`just fmt`, focused tests as needed, `just test`, and final `just ci`).
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -54,14 +53,26 @@ Added `nxus exec <name>` in `nxus-shell` with raw trailing argv captured after `
 Updated the generated `nxus.toml` template, repo example config, CLI help examples, and README documentation to describe `[command.<name>]`, placeholder support, raw `--` forwarding, profile selection behavior, no implicit build semantics, and using CMake targets as regular configured commands.
 
 Validation ran cleanly with `just fmt`, `just index`, focused `cargo test` runs during development, `just test`, `just doctest`, and a final `just ci`. Coverage from the final CI flow was 91.21% line coverage overall, with 123/123 tests passing and zero warnings or errors in `just ci`.
+
+Reopened the existing project-defined exec command task to cover the follow-up `nxus exec list` discovery feature instead of creating a duplicate task.
+
+Added `nxus exec list` as a reserved built-in on top of the existing positional `exec` command model so normal `nxus exec <name>` parsing and execution semantics remain unchanged.
+
+Added a small `nxus-core` `command_info` reader backed by `toml_edit` that reads only adjacent single-line `#` comments from `nxus.toml` and maps them onto the already-authoritative configured command names from the resolved config.
+
+Covered direct-adjacency comment extraction rules, undocumented commands, preserved command order, reserved `list` behavior, parser/runtime regressions, and end-to-end listing output without requiring build artifacts or external tools.
+
+Validation passed with `just fmt`, focused `just test -- command_info`, focused `just test -- exec`, full `just test`, and final `just ci`. Final coverage from `just ci` was 92.37% region coverage and 91.71% line coverage overall with zero warnings/errors.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
 
 <!-- SECTION:FINAL_SUMMARY:BEGIN -->
-Implemented project-defined `nxus exec` support backed by `[command.<name>]` entries in `nxus.toml`. The top-level config now carries an ordered map of named commands using the existing `CommandConfig`, the resolved project context exposes those commands for the selected/default profile, and a new generic `resolve_command` function in `nxus-core` handles placeholder expansion, artifact validation, and `Cmd` construction for both `exec` and `flash`.
+Implemented project-defined `nxus exec` support backed by `[command.<name>]` entries in `nxus.toml`. The top-level config carries an ordered map of named commands using the existing `CommandConfig`, the resolved project context exposes those commands for the selected/default profile, and a generic `resolve_command` function in `nxus-core` handles placeholder expansion, artifact validation, and `Cmd` construction for both `exec` and `flash`.
 
-In `nxus-shell`, added the `exec` subcommand with Clap parsing that preserves raw arguments after `--` as separate argv entries and appends them after the configured arguments before invoking the shared `Runner`. Unknown project commands, unknown placeholders, and missing artifacts now report clear command-oriented errors. `nxus exec` does not trigger an implicit build, while existing flash build and rebuild behavior remains unchanged.
+In `nxus-shell`, `nxus exec <name>` preserves raw arguments after `--` as separate argv entries and appends them after the configured arguments before invoking the shared `Runner`. Unknown project commands, unknown placeholders, and missing artifacts report clear command-oriented errors. `nxus exec` does not trigger an implicit build, while existing flash build and rebuild behavior remains unchanged.
 
-Updated the project template config, checked-in example config, CLI examples, and README documentation to cover command configuration, supported placeholders, profile selection, raw argument forwarding, artifact requirements, and using CMake targets as ordinary configured commands. Validation finished cleanly with `just test`, `just doctest`, and `just ci`; the final coverage report showed 91.21% overall line coverage with 123/123 tests passing.
+Added `nxus exec list` as a reserved built-in discovery operation on the existing `exec` interface. Listing uses a new `nxus-core::command_info` helper that reads `nxus.toml` with `toml_edit`, inspects the table-header prefix decoration for `[command.<name>]`, and extracts only the single physical `#` comment line immediately above each command table as an optional description. Blank lines break the association, multiline comments are not joined, malformed metadata falls back to no description, and configured command names still come from the already-loaded Nxus config. A configured `[command.list]` entry is still shown in listings, but `nxus exec list` always performs listing instead of executing it.
+
+Updated the project template config, checked-in example config, CLI examples, and README documentation to cover `nxus exec list`, the adjacent single-line comment convention, the reserved `list` name, and the fact that undocumented commands are still listed. Added focused unit, CLI, and integration coverage for comment extraction, metadata mapping, reserved-name behavior, and regressions for normal custom-command execution. Validation finished cleanly with `just test` and `just ci`; the final coverage report from `just ci` showed 91.71% overall line coverage with 137/137 tests passing and zero warnings or errors.
 <!-- SECTION:FINAL_SUMMARY:END -->

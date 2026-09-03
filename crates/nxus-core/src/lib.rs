@@ -65,6 +65,8 @@
 
 /// Configured command resolution.
 pub(crate) mod command;
+/// Project command discovery metadata.
+pub(crate) mod command_info;
 /// Config resolution.
 pub(crate) mod config;
 /// Nux core error types.
@@ -82,6 +84,7 @@ pub(crate) mod workspace;
 
 // Re-exports.
 pub use command::resolve_command;
+pub use command_info::{CommandInfo, command_info};
 pub use config::{
     CommandConfig, ConfigContext, DEFAULT_NUTTX_APPS_REV, DEFAULT_NUTTX_APPS_SRC,
     DEFAULT_NUTTX_REV, DEFAULT_NUTTX_SRC, NxusConfig, ProfileConfig, ProfileSelection,

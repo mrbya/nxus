@@ -20,17 +20,24 @@ root = "workspace"
 
 [workspace.nuttx_apps]
 
-[command.size]
-command = "arm-none-eabi-size"
-args = ["{elf}"]
-
 [command.objdump]
 command = "arm-none-eabi-objdump"
 args = ["-d", "{elf}"]
 
+# Build documentation.
 [command.docs]
 command = "cmake"
 args = ["--build", "{build_dir}", "--target", "docs"]
+
+# Check source formatting.
+[command.format-check]
+command = "clang-format"
+args = ["--dry-run"]
+
+# Report firmware size.
+[command.size]
+command = "arm-none-eabi-size"
+args = ["{elf}"]
 
 [command.foo]
 command = "tool"
@@ -751,6 +758,71 @@ fn exec_fails_when_project_command_is_missing() {
         .stderr(predicate::str::contains(
             "unknown project command: `missing`",
         ));
+}
+
+#[test]
+fn exec_list_shows_all_configured_commands_and_descriptions() {
+    let fixture = ProjectFixture::new();
+
+    fixture
+        .command()
+        .args(["exec", "list"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("Available commands:"))
+        .stdout(predicate::str::contains("docs"))
+        .stdout(predicate::str::contains("Build documentation."))
+        .stdout(predicate::str::contains("format-check"))
+        .stdout(predicate::str::contains("Check source formatting."))
+        .stdout(predicate::str::contains("size"));
+}
+
+#[test]
+fn exec_list_is_reserved_even_when_project_defines_list_command() {
+    let fixture = ProjectFixture::new();
+    write_file(
+        &fixture.project_dir.join("nxus.toml"),
+        r#"[project]
+default_profile = "sim"
+
+[build]
+root = "build"
+link_compile_commands = true
+
+[workspace]
+root = "workspace"
+
+[workspace.nuttx]
+
+[workspace.nuttx_apps]
+
+# Reserved list command.
+[command.list]
+command = "missing-tool"
+
+# Build documentation.
+[command.docs]
+command = "doxide"
+args = ["build"]
+
+[profile.sim]
+arch = "sim"
+family = "sim"
+board = "sim"
+config_base = "nsh"
+"#,
+    );
+
+    fixture
+        .command()
+        .args(["exec", "list"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("Available commands:"))
+        .stdout(predicate::str::contains("list"))
+        .stdout(predicate::str::contains("Reserved list command."))
+        .stdout(predicate::str::contains("docs"))
+        .stderr(predicate::str::is_empty());
 }
 
 #[test]
