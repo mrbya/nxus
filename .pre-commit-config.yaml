@@ -7,7 +7,7 @@ repos:
   - id: trailing-whitespace
   - id: end-of-file-fixer
   - id: check-toml
-    files: ^(crates/nxus-core/src/project_template/template/nxus\.toml$).*\.toml$
+    files: ^(?!crates/nxus-core/src/project_template/template/nxus\.toml$).*\.toml$
   - id: check-yaml
     files: ^(?!\.gitlab-ci\.yml$).*\.ya?ml$
 
