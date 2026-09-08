@@ -26,7 +26,7 @@ mod tests {
     use std::path::{Path, PathBuf};
 
     use crate::config::DEFAULT_PROJECT_DEFAULT_PROFILE;
-    use crate::{CommandConfig, CoreError, load_config};
+    use crate::{load_config, CommandConfig, CoreError};
 
     fn write_config(dir: &Path) -> PathBuf {
         let file_path = dir.join("nxus.toml");
@@ -137,6 +137,7 @@ args = ["-c", "program {elf} verify reset exit"]
                     String::from("-c"),
                     String::from("program {elf} verify reset exit")
                 ],
+                cwd: None,
             })
         );
     }
@@ -158,6 +159,7 @@ args = ["{elf}"]
 
 [command.generate]
 command = "./tools/generate"
+cwd = "{{build_dir}}"
 "#,
         )
         .expect("config file should be created");
@@ -171,6 +173,7 @@ command = "./tools/generate"
             Some(&CommandConfig {
                 command: String::from("arm-none-eabi-size"),
                 args: vec![String::from("{elf}")],
+                cwd: None,
             })
         );
         assert_eq!(
@@ -178,6 +181,7 @@ command = "./tools/generate"
             Some(&CommandConfig {
                 command: String::from("./tools/generate"),
                 args: vec![],
+                cwd: Some(String::from("{{build_dir}}")),
             })
         );
     }

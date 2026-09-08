@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use crate::{Cmd, CommandConfig, CoreError, CoreResult, ResolvedConfig, paths};
 
@@ -15,7 +15,13 @@ pub fn resolve_command(cfg: &ResolvedConfig, command: &CommandConfig) -> CoreRes
         .map(|arg| expand_template(cfg, arg))
         .collect::<CoreResult<Vec<_>>>()?;
 
-    Ok(Cmd::new(program).args(args))
+    let mut cmd = Cmd::new(program).args(args);
+
+    if let Some(cwd) = command.cwd.as_deref() {
+        cmd = cmd.cwd(resolve_cwd(cfg, cwd)?);
+    }
+
+    Ok(cmd)
 }
 
 /// Expands supported `{placeholder}` segments inside a configured command string.
@@ -23,9 +29,9 @@ fn expand_template(cfg: &ResolvedConfig, template: &str) -> CoreResult<String> {
     let mut output = String::new();
     let mut rest = template;
 
-    while let Some((prefix, placeholder)) = rest.split_once('{') {
+    while let Some((prefix, placeholder)) = rest.split_once("{{") {
         output.push_str(prefix);
-        let Some((name, suffix)) = placeholder.split_once('}') else {
+        let Some((name, suffix)) = placeholder.split_once("}}") else {
             return Err(CoreError::UnknownCommandPlaceholder {
                 placeholder: placeholder.to_owned(),
             });
@@ -52,6 +58,18 @@ fn placeholder_value(cfg: &ResolvedConfig, placeholder: &str) -> CoreResult<Stri
         _ => Err(CoreError::UnknownCommandPlaceholder {
             placeholder: placeholder.to_owned(),
         }),
+    }
+}
+
+/// Resolves cwd for a single command.
+fn resolve_cwd(cfg: &ResolvedConfig, cwd: &str) -> CoreResult<PathBuf> {
+    let expanded = expand_template(cfg, cwd)?;
+    let path = PathBuf::from(expanded);
+
+    if path.is_absolute() {
+        Ok(path)
+    } else {
+        Ok(cfg.ctx.project_dir.join(path))
     }
 }
 

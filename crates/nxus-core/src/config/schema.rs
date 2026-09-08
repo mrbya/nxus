@@ -272,6 +272,9 @@ pub struct CommandConfig {
     /// Program arguments.
     #[serde(default)]
     pub args: Vec<String>,
+
+    /// Program execution directory.
+    pub cwd: Option<String>,
 }
 
 /// Default sim profile architecture.
@@ -414,6 +417,7 @@ mod tests {
             CommandConfig {
                 command: String::from("arm-none-eabi-size"),
                 args: vec![String::from("{elf}")],
+                cwd: None,
             },
         );
 
@@ -427,6 +431,7 @@ mod tests {
                 flash: Some(CommandConfig {
                     command: String::from("openocd"),
                     args: vec![String::from("{elf}")],
+                    cwd: None,
                 }),
             },
         );
@@ -441,6 +446,7 @@ mod tests {
             Some(&CommandConfig {
                 command: String::from("arm-none-eabi-size"),
                 args: vec![String::from("{elf}")],
+                cwd: None
             })
         );
 
@@ -457,6 +463,7 @@ mod tests {
             Some(CommandConfig {
                 command: String::from("openocd"),
                 args: vec![String::from("{elf}")],
+                cwd: None
             })
         );
     }
@@ -469,6 +476,7 @@ mod tests {
             CommandConfig {
                 command: String::from("cmake"),
                 args: vec![String::from("--build"), String::from("old")],
+                cwd: None,
             },
         );
 
@@ -478,6 +486,7 @@ mod tests {
             CommandConfig {
                 command: String::from("ninja"),
                 args: vec![String::from("docs")],
+                cwd: None,
             },
         );
 
@@ -488,6 +497,7 @@ mod tests {
             Some(&CommandConfig {
                 command: String::from("ninja"),
                 args: vec![String::from("docs")],
+                cwd: None,
             })
         );
     }

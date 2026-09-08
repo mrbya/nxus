@@ -22,12 +22,12 @@ root = "workspace"
 
 [command.objdump]
 command = "arm-none-eabi-objdump"
-args = ["-d", "{elf}"]
+args = ["-d", "{{elf}}"]
 
 # Build documentation.
 [command.docs]
 command = "cmake"
-args = ["--build", "{build_dir}", "--target", "docs"]
+args = ["--build", "{{build_dir}}", "--target", "docs"]
 
 # Check source formatting.
 [command.format-check]
@@ -37,11 +37,11 @@ args = ["--dry-run"]
 # Report firmware size.
 [command.size]
 command = "arm-none-eabi-size"
-args = ["{elf}"]
+args = ["{{elf}}"]
 
 [command.foo]
 command = "tool"
-args = ["configured", "{profile}"]
+args = ["configured", "{{profile}}"]
 
 [profile.sim]
 arch = "sim"
@@ -63,7 +63,7 @@ config_base = "evalos"
 
 [profile.prod.flash]
 command = "openocd"
-args = ["-f", "board/st_nucleo_f7.cfg", "-c", "program {elf} verify reset exit"]
+args = ["-f", "board/st_nucleo_f7.cfg", "-c", "program {{elf}} verify reset exit"]
 "#;
 
 struct ProjectFixture {
@@ -314,21 +314,15 @@ fn clean_without_explicit_profile_removes_workspace_links_and_build_root() {
 
     assert!(!fixture.project_dir.join("build").exists());
     assert!(!fixture.app_link().exists());
-    assert!(
-        !fixture
-            .board_config_link("sim", "sim", "sim", "sim")
-            .exists()
-    );
-    assert!(
-        !fixture
-            .board_config_link("sim", "sim", "sim", "test")
-            .exists()
-    );
-    assert!(
-        !fixture
-            .board_config_link("arm", "stm32f7", "nucleo-f767zi", "prod")
-            .exists()
-    );
+    assert!(!fixture
+        .board_config_link("sim", "sim", "sim", "sim")
+        .exists());
+    assert!(!fixture
+        .board_config_link("sim", "sim", "sim", "test")
+        .exists());
+    assert!(!fixture
+        .board_config_link("arm", "stm32f7", "nucleo-f767zi", "prod")
+        .exists());
 }
 
 #[test]
@@ -347,11 +341,9 @@ fn clean_alias_with_explicit_profile_removes_only_selected_build_dir() {
 
     assert!(!fixture.build_dir("sim").exists());
     assert!(fixture.build_dir("prod").exists());
-    assert!(
-        !fixture
-            .board_config_link("sim", "sim", "sim", "sim")
-            .exists()
-    );
+    assert!(!fixture
+        .board_config_link("sim", "sim", "sim", "sim")
+        .exists());
 }
 
 #[test]
@@ -377,11 +369,9 @@ fn config_creates_links_generated_config_and_build_dir() {
         &fixture.build_dir("prod").join("compile_commands.json"),
         "{}",
     );
-    assert!(
-        fixture
-            .board_config_link("arm", "stm32f7", "nucleo-f767zi", "prod")
-            .exists()
-    );
+    assert!(fixture
+        .board_config_link("arm", "stm32f7", "nucleo-f767zi", "prod")
+        .exists());
 }
 
 #[test]
@@ -590,21 +580,15 @@ fn workspace_prune_alias_stashes_and_unlinks() {
     fixture.command().args(["-d", "ws", "p"]).assert().success();
 
     assert!(!fixture.app_link().exists());
-    assert!(
-        !fixture
-            .board_config_link("sim", "sim", "sim", "sim")
-            .exists()
-    );
-    assert!(
-        !fixture
-            .board_config_link("sim", "sim", "sim", "test")
-            .exists()
-    );
-    assert!(
-        !fixture
-            .board_config_link("arm", "stm32f7", "nucleo-f767zi", "prod")
-            .exists()
-    );
+    assert!(!fixture
+        .board_config_link("sim", "sim", "sim", "sim")
+        .exists());
+    assert!(!fixture
+        .board_config_link("sim", "sim", "sim", "test")
+        .exists());
+    assert!(!fixture
+        .board_config_link("arm", "stm32f7", "nucleo-f767zi", "prod")
+        .exists());
 }
 
 #[test]

@@ -3,8 +3,8 @@ use std::path::PathBuf;
 use indexmap::IndexMap;
 
 use crate::config::{
-    ConfigContext, DEFAULT_BUILD_ROOT, DEFAULT_NUTTX_APPS_SRC, DEFAULT_NUTTX_SRC,
-    DEFAULT_OVERLAY_ROOT, DEFAULT_PROJECT_DEFAULT_PROFILE, DEFAULT_WORKSPACE_ROOT, NxusConfig,
+    ConfigContext, NxusConfig, DEFAULT_BUILD_ROOT, DEFAULT_NUTTX_APPS_SRC, DEFAULT_NUTTX_SRC,
+    DEFAULT_OVERLAY_ROOT, DEFAULT_PROJECT_DEFAULT_PROFILE, DEFAULT_WORKSPACE_ROOT,
 };
 use crate::{CommandConfig, CoreError, CoreResult, ProfileConfig, Runner};
 
@@ -330,6 +330,7 @@ mod tests {
             crate::CommandConfig {
                 command: String::from("arm-none-eabi-size"),
                 args: vec![String::from("{elf}")],
+                cwd: Some(String::from("{{build_dir}}")),
             },
         );
 
@@ -341,6 +342,7 @@ mod tests {
             Some(&crate::CommandConfig {
                 command: String::from("arm-none-eabi-size"),
                 args: vec![String::from("{elf}")],
+                cwd: Some(String::from("{{build_dir}}")),
             })
         );
     }

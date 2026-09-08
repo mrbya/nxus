@@ -19,6 +19,7 @@ pub fn flash_command(command: &str, args: &[&str]) -> CommandConfig {
     CommandConfig {
         command: String::from(command),
         args: args.iter().map(|arg| String::from(*arg)).collect(),
+        cwd: None,
     }
 }
 
