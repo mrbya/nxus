@@ -1,4 +1,4 @@
-use crate::{Cmd, CoreError, CoreResult, ResolvedConfig, resolve_command};
+use crate::{resolve_command, Cmd, CoreError, CoreResult, ResolvedConfig};
 
 /// Resolves the selected profile's configured flash command into an executable command.
 ///
@@ -18,7 +18,7 @@ pub fn resolve_flash_command(cfg: &ResolvedConfig) -> CoreResult<Cmd> {
 #[cfg(test)]
 mod tests {
     use crate::tests::{flash_command, resolved_config};
-    use crate::{CoreError, resolve_flash_command};
+    use crate::{resolve_flash_command, CoreError};
 
     #[test]
     fn resolve_flash_command_errors_when_not_configured() {
@@ -35,7 +35,7 @@ mod tests {
     fn resolve_flash_command_errors_on_unknown_placeholder() {
         let temp_dir = tempfile::TempDir::new().expect("tempdir should be created");
         let mut cfg = resolved_config(temp_dir.path());
-        cfg.flash = Some(flash_command("tool", &["{unknown}"]));
+        cfg.flash = Some(flash_command("tool", &["{{unknown}}"]));
 
         assert!(matches!(
             resolve_flash_command(&cfg),
@@ -47,7 +47,7 @@ mod tests {
     fn resolve_flash_command_errors_on_missing_artifact() {
         let temp_dir = tempfile::TempDir::new().expect("tempdir should be created");
         let mut cfg = resolved_config(temp_dir.path());
-        cfg.flash = Some(flash_command("tool", &["{hex}"]));
+        cfg.flash = Some(flash_command("tool", &["{{hex}}"]));
 
         assert!(matches!(
             resolve_flash_command(&cfg),
