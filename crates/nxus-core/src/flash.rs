@@ -1,4 +1,4 @@
-use crate::{resolve_command, Cmd, CoreError, CoreResult, ResolvedConfig};
+use crate::{Cmd, CoreError, CoreResult, ResolvedConfig, resolve_command};
 
 /// Resolves the selected profile's configured flash command into an executable command.
 ///
@@ -18,7 +18,7 @@ pub fn resolve_flash_command(cfg: &ResolvedConfig) -> CoreResult<Cmd> {
 #[cfg(test)]
 mod tests {
     use crate::tests::{flash_command, resolved_config};
-    use crate::{resolve_flash_command, CoreError};
+    use crate::{CoreError, resolve_flash_command};
 
     #[test]
     fn resolve_flash_command_errors_when_not_configured() {

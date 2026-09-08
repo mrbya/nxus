@@ -110,7 +110,7 @@ mod tests {
                     "-f",
                     "board/st.cfg",
                     "-c",
-                    "program {profile} verify reset exit",
+                    "program {{profile}} verify reset exit",
                 ],
             ),
         )
@@ -153,15 +153,15 @@ mod tests {
         let cmd = resolve_command(
             &cfg,
             &flash_command(
-                "{project_dir}/tool",
+                "{{project_dir}}/tool",
                 &[
-                    "{project_dir}",
-                    "{workspace_dir}",
-                    "{build_dir}",
-                    "{profile}",
-                    "{elf}",
-                    "{bin}",
-                    "{hex}",
+                    "{{project_dir}}",
+                    "{{workspace_dir}}",
+                    "{{build_dir}}",
+                    "{{profile}}",
+                    "{{elf}}",
+                    "{{bin}}",
+                    "{{hex}}",
                 ],
             ),
         )
@@ -234,7 +234,7 @@ mod tests {
         let cfg = resolved_config(temp_dir.path());
 
         assert!(matches!(
-            resolve_command(&cfg, &flash_command("tool", &["{unknown}"])),
+            resolve_command(&cfg, &flash_command("tool", &["{{unknown}}"])),
             Err(CoreError::UnknownCommandPlaceholder { .. })
         ));
     }
@@ -245,7 +245,7 @@ mod tests {
         let cfg = resolved_config(temp_dir.path());
 
         assert!(matches!(
-            resolve_command(&cfg, &flash_command("tool", &["{hex}"])),
+            resolve_command(&cfg, &flash_command("tool", &["{{hex}}"])),
             Err(CoreError::RequiredCommandArtifactMissing { artifact, .. }) if artifact == "hex"
         ));
     }

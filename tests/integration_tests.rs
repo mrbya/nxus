@@ -314,15 +314,21 @@ fn clean_without_explicit_profile_removes_workspace_links_and_build_root() {
 
     assert!(!fixture.project_dir.join("build").exists());
     assert!(!fixture.app_link().exists());
-    assert!(!fixture
-        .board_config_link("sim", "sim", "sim", "sim")
-        .exists());
-    assert!(!fixture
-        .board_config_link("sim", "sim", "sim", "test")
-        .exists());
-    assert!(!fixture
-        .board_config_link("arm", "stm32f7", "nucleo-f767zi", "prod")
-        .exists());
+    assert!(
+        !fixture
+            .board_config_link("sim", "sim", "sim", "sim")
+            .exists()
+    );
+    assert!(
+        !fixture
+            .board_config_link("sim", "sim", "sim", "test")
+            .exists()
+    );
+    assert!(
+        !fixture
+            .board_config_link("arm", "stm32f7", "nucleo-f767zi", "prod")
+            .exists()
+    );
 }
 
 #[test]
@@ -341,9 +347,11 @@ fn clean_alias_with_explicit_profile_removes_only_selected_build_dir() {
 
     assert!(!fixture.build_dir("sim").exists());
     assert!(fixture.build_dir("prod").exists());
-    assert!(!fixture
-        .board_config_link("sim", "sim", "sim", "sim")
-        .exists());
+    assert!(
+        !fixture
+            .board_config_link("sim", "sim", "sim", "sim")
+            .exists()
+    );
 }
 
 #[test]
@@ -369,9 +377,11 @@ fn config_creates_links_generated_config_and_build_dir() {
         &fixture.build_dir("prod").join("compile_commands.json"),
         "{}",
     );
-    assert!(fixture
-        .board_config_link("arm", "stm32f7", "nucleo-f767zi", "prod")
-        .exists());
+    assert!(
+        fixture
+            .board_config_link("arm", "stm32f7", "nucleo-f767zi", "prod")
+            .exists()
+    );
 }
 
 #[test]
@@ -580,15 +590,21 @@ fn workspace_prune_alias_stashes_and_unlinks() {
     fixture.command().args(["-d", "ws", "p"]).assert().success();
 
     assert!(!fixture.app_link().exists());
-    assert!(!fixture
-        .board_config_link("sim", "sim", "sim", "sim")
-        .exists());
-    assert!(!fixture
-        .board_config_link("sim", "sim", "sim", "test")
-        .exists());
-    assert!(!fixture
-        .board_config_link("arm", "stm32f7", "nucleo-f767zi", "prod")
-        .exists());
+    assert!(
+        !fixture
+            .board_config_link("sim", "sim", "sim", "sim")
+            .exists()
+    );
+    assert!(
+        !fixture
+            .board_config_link("sim", "sim", "sim", "test")
+            .exists()
+    );
+    assert!(
+        !fixture
+            .board_config_link("arm", "stm32f7", "nucleo-f767zi", "prod")
+            .exists()
+    );
 }
 
 #[test]

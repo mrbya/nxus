@@ -26,7 +26,7 @@ mod tests {
     use std::path::{Path, PathBuf};
 
     use crate::config::DEFAULT_PROJECT_DEFAULT_PROFILE;
-    use crate::{load_config, CommandConfig, CoreError};
+    use crate::{CommandConfig, CoreError, load_config};
 
     fn write_config(dir: &Path) -> PathBuf {
         let file_path = dir.join("nxus.toml");
