@@ -153,6 +153,7 @@ pub struct InitArgs {
 
 /// Exec command args.
 #[derive(Clone, Args, Debug)]
+#[command(after_help = "Built-in commands:\n  list  List available project commands")]
 pub struct ExecArgs {
     /// Configured project command name.
     pub name: String,
