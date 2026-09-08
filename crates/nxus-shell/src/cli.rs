@@ -52,7 +52,7 @@ pub struct Cli {
     pub rebuild: bool,
 
     /// Verbosity (repeatable).
-    #[arg(short = 'v', action = clap::ArgAction::Count, default_value_t = 2)]
+    #[arg(short = 'v', long, action = clap::ArgAction::Count, default_value_t = 2)]
     pub verbose: u8,
 
     /// Dry run command?
