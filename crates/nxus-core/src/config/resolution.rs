@@ -3,8 +3,8 @@ use std::path::PathBuf;
 use indexmap::IndexMap;
 
 use crate::config::{
-    ConfigContext, NxusConfig, DEFAULT_BUILD_ROOT, DEFAULT_NUTTX_APPS_SRC, DEFAULT_NUTTX_SRC,
-    DEFAULT_OVERLAY_ROOT, DEFAULT_PROJECT_DEFAULT_PROFILE, DEFAULT_WORKSPACE_ROOT,
+    ConfigContext, DEFAULT_BUILD_ROOT, DEFAULT_NUTTX_APPS_SRC, DEFAULT_NUTTX_SRC,
+    DEFAULT_OVERLAY_ROOT, DEFAULT_PROJECT_DEFAULT_PROFILE, DEFAULT_WORKSPACE_ROOT, NxusConfig,
 };
 use crate::{CommandConfig, CoreError, CoreResult, ProfileConfig, Runner};
 
@@ -103,43 +103,28 @@ impl ResolvedConfig {
     ) -> CoreResult<Self> {
         let selected = select_profile(profile.cloned(), cfg)?;
 
-        let build_root = std::env::var(BUILD_ROOT_ENV_VAR).map_or_else(
-            |_| {
-                ctx.project_dir.join(
-                    cfg.build
-                        .root
-                        .clone()
-                        .unwrap_or_else(|| String::from(DEFAULT_BUILD_ROOT)),
-                )
-            },
-            PathBuf::from,
+        let build_root = resolve_path(
+            BUILD_ROOT_ENV_VAR,
+            cfg.build.root.as_ref(),
+            DEFAULT_BUILD_ROOT,
+            ctx,
         );
 
         let build_dir = build_root.join(&selected);
         let link_compile_commands = cfg.build.link_compile_commands.unwrap_or(true);
 
-        let workspace_root = std::env::var(WORKSPACE_ENV_VAR).map_or_else(
-            |_| {
-                ctx.project_dir.join(
-                    cfg.workspace
-                        .root
-                        .clone()
-                        .unwrap_or_else(|| String::from(DEFAULT_WORKSPACE_ROOT)),
-                )
-            },
-            PathBuf::from,
+        let workspace_root = resolve_path(
+            WORKSPACE_ENV_VAR,
+            cfg.workspace.root.as_ref(),
+            DEFAULT_WORKSPACE_ROOT,
+            ctx,
         );
 
-        let overlay_root = std::env::var(OVERLAY_ROOT_ENV_VAR).map_or_else(
-            |_| {
-                ctx.project_dir.join(
-                    cfg.project
-                        .overlay_root
-                        .clone()
-                        .unwrap_or_else(|| String::from(DEFAULT_OVERLAY_ROOT)),
-                )
-            },
-            PathBuf::from,
+        let overlay_root = resolve_path(
+            OVERLAY_ROOT_ENV_VAR,
+            cfg.project.overlay_root.as_ref(),
+            DEFAULT_OVERLAY_ROOT,
+            ctx,
         );
 
         let nuttx_src = cfg
@@ -208,6 +193,25 @@ impl ResolvedConfig {
         config.profile_selection = ProfileSelection::Explicit;
         config.profile = String::from(profile);
         config
+    }
+}
+
+/// Resolves a single path with env and config overrides.
+fn resolve_path(
+    env_var: &str,
+    cfg_path: Option<&String>,
+    default: &str,
+    ctx: &ConfigContext,
+) -> PathBuf {
+    let path = std::env::var(env_var).map_or_else(
+        |_| PathBuf::from(cfg_path.map_or(default, String::as_str)),
+        PathBuf::from,
+    );
+
+    if path.is_relative() {
+        ctx.project_dir.join(path)
+    } else {
+        path
     }
 }
 
