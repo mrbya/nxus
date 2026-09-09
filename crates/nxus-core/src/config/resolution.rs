@@ -3,15 +3,24 @@ use std::path::PathBuf;
 use indexmap::IndexMap;
 
 use crate::config::{
-    ConfigContext, DEFAULT_BUILD_ROOT, DEFAULT_NUTTX_APPS_SRC, DEFAULT_NUTTX_SRC,
-    DEFAULT_OVERLAY_ROOT, DEFAULT_PROJECT_DEFAULT_PROFILE, DEFAULT_WORKSPACE_ROOT, NxusConfig,
+    ConfigContext, NxusConfig, DEFAULT_BUILD_ROOT, DEFAULT_NUTTX_APPS_SRC, DEFAULT_NUTTX_SRC,
+    DEFAULT_OVERLAY_ROOT, DEFAULT_PROJECT_DEFAULT_PROFILE, DEFAULT_WORKSPACE_ROOT,
 };
 use crate::{CommandConfig, CoreError, CoreResult, ProfileConfig, Runner};
+
+/// Workspace dir override env var name.
+const WORKSPACE_ENV_VAR: &str = "NXUS_WORKSPACE";
+
+/// Build root dir override env var name.
+const BUILD_ROOT_ENV_VAR: &str = "NXUS_BUILD_ROOT";
+
+/// Config overlay root override env var name.
+const OVERLAY_ROOT_ENV_VAR: &str = "NXUS_OVERLAY_ROOT";
 
 /// Resolved nxus configuration after parsing and resolving profile.
 #[derive(Debug, Clone)]
 pub struct ResolvedConfig {
-    /// General config values
+    // General config values
     /// Current working dir.
     pub cwd: PathBuf,
     /// Pre-celan profile build dir?
@@ -30,6 +39,10 @@ pub struct ResolvedConfig {
     pub profiles: IndexMap<String, ProfileConfig>,
     /// Project-defined commands.
     pub commands: IndexMap<String, CommandConfig>,
+
+    // Config overlay related values.
+    /// Config overlay root.
+    pub overlay_root: PathBuf,
 
     /// Build dir related config values.
     /// Project build root path.
@@ -90,22 +103,40 @@ impl ResolvedConfig {
     ) -> CoreResult<Self> {
         let selected = select_profile(profile.cloned(), cfg)?;
 
-        let build_root = ctx.project_dir.join(
-            cfg.build
-                .root
-                .clone()
-                .unwrap_or_else(|| String::from(DEFAULT_BUILD_ROOT)),
+        let build_root = std::env::var(BUILD_ROOT_ENV_VAR).map_or_else(
+            |_| {
+                ctx.project_dir.join(
+                    cfg.build
+                        .root
+                        .clone()
+                        .unwrap_or_else(|| String::from(DEFAULT_BUILD_ROOT)),
+                )
+            },
+            PathBuf::from,
         );
+
         let build_dir = build_root.join(&selected);
         let link_compile_commands = cfg.build.link_compile_commands.unwrap_or(true);
 
-        let workspace_root = std::env::var("NXUS_WORKSPACE").map_or_else(
+        let workspace_root = std::env::var(WORKSPACE_ENV_VAR).map_or_else(
             |_| {
                 ctx.project_dir.join(
                     cfg.workspace
                         .root
                         .clone()
                         .unwrap_or_else(|| String::from(DEFAULT_WORKSPACE_ROOT)),
+                )
+            },
+            PathBuf::from,
+        );
+
+        let overlay_root = std::env::var(OVERLAY_ROOT_ENV_VAR).map_or_else(
+            |_| {
+                ctx.project_dir.join(
+                    cfg.project
+                        .overlay_root
+                        .clone()
+                        .unwrap_or_else(|| String::from(DEFAULT_OVERLAY_ROOT)),
                 )
             },
             PathBuf::from,
@@ -136,15 +167,7 @@ impl ResolvedConfig {
         let board = profile_cfg.board.clone();
         let config_base = profile_cfg.config_base.clone();
         let flash = profile_cfg.flash.clone();
-        let config_overlay = ctx
-            .project_dir
-            .join(
-                cfg.project
-                    .overlay_root
-                    .clone()
-                    .unwrap_or_else(|| String::from(DEFAULT_OVERLAY_ROOT)),
-            )
-            .join(format!("{selected}.overlay"));
+        let config_overlay = overlay_root.join(format!("{selected}.overlay"));
 
         Ok(Self {
             cwd: ctx.cwd.clone(),
@@ -160,6 +183,7 @@ impl ResolvedConfig {
             profile: selected,
             profiles: cfg.profiles.clone(),
             commands: cfg.commands.clone(),
+            overlay_root,
             build_root,
             build_dir,
             link_compile_commands,

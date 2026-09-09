@@ -23,7 +23,7 @@ pub fn app_link(cfg: &ResolvedConfig) -> PathBuf {
 /// Returns path to build root dir.
 #[must_use]
 pub fn build_root(cfg: &ResolvedConfig) -> PathBuf {
-    cfg.cwd.join(&cfg.build_root)
+    cfg.build_root.clone()
 }
 
 /// Returns path to build dir of the selected profile.
@@ -83,7 +83,7 @@ pub fn generated_config_file(cfg: &ResolvedConfig, profile: &str) -> PathBuf {
 /// Returns path to nxus project config root dir.
 #[must_use]
 pub fn config_root(cfg: &ResolvedConfig) -> PathBuf {
-    cfg.cwd.join("config")
+    cfg.overlay_root.clone()
 }
 
 /// Returns path to nxus project common config.
@@ -202,15 +202,15 @@ mod tests {
         );
         assert_eq!(
             paths::config_root(&cfg),
-            PathBuf::from("/tmp/project/app/config")
+            PathBuf::from("/tmp/project/config")
         );
         assert_eq!(
             paths::common_config(&cfg),
-            PathBuf::from("/tmp/project/app/config/common.config")
+            PathBuf::from("/tmp/project/config/common.config")
         );
         assert_eq!(
             paths::config_overlay(&cfg, "sim"),
-            PathBuf::from("/tmp/project/app/config/sim.overlay")
+            PathBuf::from("/tmp/project/config/sim.overlay")
         );
         assert_eq!(
             paths::board_config_root(&cfg),

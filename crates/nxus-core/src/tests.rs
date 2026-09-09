@@ -53,6 +53,7 @@ pub fn resolved_config(project_dir: &Path) -> ResolvedConfig {
         profile: profile_name,
         profiles,
         commands: IndexMap::new(),
+        overlay_root: project_dir.join("config"),
         build_root: build_root.clone(),
         build_dir: build_root.join("sim"),
         link_compile_commands: true,
