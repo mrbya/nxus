@@ -17,26 +17,26 @@ use crate::commands::{
     propagate_version = true,
     after_help = r#"Examples:
 
-    # Init project with a config or generate a new project scaffold
-    nxus init config
-    nxus init project demo
+  # Init project with a config or generate a new project scaffold
+  nxus init config
+  nxus init project demo
 
-    # Config -> build -> run binary
-    nxus config
-    nxus build
-    nxus run
+  # Config -> build -> run binary
+  nxus config
+  nxus build
+  nxus run
 
-    # Flash binary
-    nxus -p prod flash
+  # Flash binary
+  nxus -p prod flash
 
-    # Execute a configured project command
-    nxus exec list
-    nxus exec size
-    nxus exec objdump -- -d -S
+  # Execute a configured project command
+  nxus exec list
+  nxus exec size
+  nxus exec objdump -- -d -S
 
-    # Run simulation and tests
-    nxus sim
-    nxus test
+  # Run simulation and tests
+  nxus sim
+  nxus test
 
 For more info, see "https://gitlab.com/byacrates/nxus"
 "#
