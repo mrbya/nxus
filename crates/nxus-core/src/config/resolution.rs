@@ -99,11 +99,16 @@ impl ResolvedConfig {
         let build_dir = build_root.join(&selected);
         let link_compile_commands = cfg.build.link_compile_commands.unwrap_or(true);
 
-        let workspace_root = ctx.project_dir.join(
-            cfg.workspace
-                .root
-                .clone()
-                .unwrap_or_else(|| String::from(DEFAULT_WORKSPACE_ROOT)),
+        let workspace_root = std::env::var("NXUS_WORKSPACE").map_or_else(
+            |_| {
+                ctx.project_dir.join(
+                    cfg.workspace
+                        .root
+                        .clone()
+                        .unwrap_or_else(|| String::from(DEFAULT_WORKSPACE_ROOT)),
+                )
+            },
+            PathBuf::from,
         );
 
         let nuttx_src = cfg
