@@ -1,6 +1,8 @@
 #!/usr/bin/env just --justfile
 set dotenv-load := true
 
+gitlab_image_registry := "registry.gitlab.com/byacrates/nxus"
+
 # Output this list.
 list:
     @just --list
@@ -116,11 +118,11 @@ pre-commit-install:
 docker-build:
     #!/usr/bin/env bash
     set -euo pipefail
-    if [ -z "${GITLAB_IMAGE_REGISTRY}" ]; then
+    if [ -z "{{gitlab_image_registry}}" ]; then
         exit 1 # GITLAB_IMAGE_REGISTRY variable has to be set
     fi
     IMAGE_TAG="$(git rev-parse --short HEAD)"
-    IMAGE_BASE="${GITLAB_IMAGE_REGISTRY}"
+    IMAGE_BASE="{{gitlab_image_registry}}"
     IMAGE="${IMAGE_BASE}:${IMAGE_TAG}"
     IMAGE_LATEST="${IMAGE_BASE}:latest"
     sudo docker buildx build -f "./Dockerfile" -t "${IMAGE}" --load \
