@@ -1,4 +1,9 @@
 # Nxus
+[![crates.io](https://img.shields.io/crates/v/nxus.svg)](https://crates.io/crates/nxus)
+[![docs.rs](https://img.shields.io/docsrs/nxus)](https://docs.rs/nxus)
+[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
+[![pipeline](https://gitlab.com/byacrates/nxus/badges/master/pipeline.svg)](https://gitlab.com/byacrates/nxus/-/commits/master)
+[![coverage](https://gitlab.com/byacrates/nxus/badges/master/coverage.svg)](https://gitlab.com/byacrates/nxus/-/commits/master)
 
 Nxus is a CLI build-system companion for opinionated NuttX projects, driven by a declarative `nxus.toml` configuration.
 

@@ -32,12 +32,10 @@ pub struct Cmd {
 }
 
 impl Cmd {
-    /**
-     * Creates a new command builder.
-     *
-     * # Returns
-     * Constructed `Cmd` with program name set.
-     */
+    /// Creates a new command builder.
+    ///
+    /// # Returns
+    /// Constructed `Cmd` with program name set.
     pub fn new(program: impl Into<OsString>) -> Self {
         Self {
             program: program.into(),
@@ -47,24 +45,20 @@ impl Cmd {
         }
     }
 
-    /**
-     * Appends a single argument.
-     *
-     * # Returns
-     * Updated `Cmd`.
-     */
+    /// Appends a single argument.
+    ///
+    /// # Returns
+    /// Updated `Cmd`.
     #[must_use]
     pub fn arg(mut self, a: impl Into<OsString>) -> Self {
         self.args.push(a.into());
         self
     }
 
-    /**
-     * Appends multiple arguments.
-     *
-     * # Returns
-     * Updated `Cmd`.
-     */
+    /// Appends multiple arguments.
+    ///
+    /// # Returns
+    /// Updated `Cmd`.
     #[must_use]
     pub fn args<I, S>(mut self, it: I) -> Self
     where
@@ -75,24 +69,20 @@ impl Cmd {
         self
     }
 
-    /**
-     * Sets the working directory.
-     *
-     * # Returns
-     * Updated `Cmd`.
-     */
+    /// Sets the working directory.
+    ///
+    /// # Returns
+    /// Updated `Cmd`.
     #[must_use]
     pub fn cwd(mut self, p: impl Into<PathBuf>) -> Self {
         self.cwd = Some(p.into());
         self
     }
 
-    /**
-     * Adds an environment override.
-     *
-     * # Returns
-     * Updated `Cmd`.
-     */
+    /// Adds an environment override.
+    ///
+    /// # Returns
+    /// Updated `Cmd`.
     #[must_use]
     pub fn env(mut self, k: impl Into<OsString>, v: impl Into<OsString>) -> Self {
         self.env.push((k.into(), v.into()));
@@ -110,13 +100,11 @@ pub struct Runner {
 }
 
 impl Runner {
-    /**
-     * Runs a command using the configured runner behavior.
-     *
-     * # Errors
-     * Returns `CoreError::Io` if the process cannot be spawned and
-     * `CoreError::CommandFailed` if the command exits unsuccessfully.
-     */
+    /// Runs a command using the configured runner behavior.
+    ///
+    /// # Errors
+    /// Returns `CoreError::Io` if the process cannot be spawned and
+    /// `CoreError::CommandFailed` if the command exits unsuccessfully.
     pub fn run(self, cmd: &Cmd, message: &str) -> Result<(), CoreError> {
         if self.verbose == 2 {
             self.run_inner(cmd, Some(message))
@@ -352,18 +340,16 @@ fn write_raw_bytes(out: &mut dyn IoWrite, bytes: &[u8]) -> std::io::Result<()> {
     Ok(())
 }
 
-/**
- * Formats a command for logging, including a `(cd ...)` wrapper when a
- * working directory is supplied.
- *
- * # Arguments
- * - `program`: Executable name.
- * - `args`: Argument list to render.
- * - `cwd`: Optional working directory to include in the output.
- *
- * # Returns
- * Rendered command string suitable for logs.
- */
+/// Formats a command for logging, including a `(cd ...)` wrapper when a
+/// working directory is supplied.
+///
+/// # Arguments
+/// - `program`: Executable name.
+/// - `args`: Argument list to render.
+/// - `cwd`: Optional working directory to include in the output.
+///
+/// # Returns
+/// Rendered command string suitable for logs.
 fn pretty_cmd(program: &OsStr, args: &[OsString], cwd: Option<&Path>) -> String {
     let mut s = String::new();
     if let Some(cwd) = cwd {
@@ -384,16 +370,14 @@ fn pretty_cmd(program: &OsStr, args: &[OsString], cwd: Option<&Path>) -> String 
     s
 }
 
-/**
- * Returns a shell-friendly representation, quoting whitespace to preserve
- * argument boundaries.
- *
- * # Arguments
- * - `s`: Argument to render.
- *
- * # Returns
- * Shell-friendly string with whitespace preserved.
- */
+/// Returns a shell-friendly representation, quoting whitespace to preserve
+/// argument boundaries.
+///
+/// # Arguments
+/// - `s`: Argument to render.
+///
+/// # Returns
+/// Shell-friendly string with whitespace preserved.
 fn shellish(s: &OsStr) -> String {
     let t = s.to_string_lossy();
     if t.chars().any(char::is_whitespace) {
