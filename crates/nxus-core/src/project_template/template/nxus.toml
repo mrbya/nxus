@@ -1,13 +1,15 @@
 # Global project config.
 [project]
 default_profile = "sim"
+# overlay_root = "config" # Or override per invocation with NXUS_OVERLAY_ROOT.
 
 # Build dir config.
 [build]
 root = "build"
 link_compile_commands = true
 
-# Project-local `NuttX` workspace config.
+# Project-local `NuttX` workspace config. Root paths may be absolute.
+# Use NXUS_BUILD_ROOT or NXUS_WORKSPACE for per-invocation root overrides.
 # Pin the `nuttx` and `nuttx_apps` revisions to the baseline you need.
 [workspace]
 root = "workspace"
@@ -57,6 +59,7 @@ flash = {
 [command.docs]
 command = "sh"
 args = ["-c", "doxide build && mkdocs build"]
+cwd = "docs"
 
 # Serve the MkDocs site locally.
 [command.docs-serve]
@@ -84,5 +87,5 @@ args = [
 command = "sh"
 args = [
     "-c",
-    "run-clang-tidy -p \"{build_dir}\" -warnings-as-errors=\"*\" -quiet -header-filter=\"^$PWD/(app)/.*\" $(find app lib -type f -name '*.cpp' -print)"
+    "run-clang-tidy -p \"{{build_dir}}\" -warnings-as-errors=\"*\" -quiet -header-filter=\"^$PWD/(app)/.*\" $(find app lib -type f -name '*.cpp' -print)"
 ]

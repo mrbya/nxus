@@ -49,10 +49,10 @@ fn expand_template(cfg: &ResolvedConfig, template: &str) -> CoreResult<String> {
 fn placeholder_value(cfg: &ResolvedConfig, placeholder: &str) -> CoreResult<String> {
     match placeholder {
         "project_dir" => Ok(path_string(&cfg.ctx.project_dir)),
-        "workspace_dir" => Ok(path_string(&cfg.workspace_root)),
+        "workspace_root" => Ok(path_string(&cfg.workspace_root)),
         "build_dir" => Ok(path_string(&paths::build_dir(cfg, &cfg.profile))),
         "build_root" => Ok(path_string(&paths::build_root(cfg))),
-        "overlay_dir" => Ok(path_string(&paths::config_root(cfg))),
+        "overlay_root" => Ok(path_string(&paths::config_root(cfg))),
         "profile" => Ok(cfg.profile.clone()),
         "elf" => required_artifact("elf", &paths::firmware_elf(cfg, &cfg.profile)),
         "bin" => required_artifact("bin", &paths::firmware_bin(cfg, &cfg.profile)),
@@ -158,7 +158,7 @@ mod tests {
                 "{{project_dir}}/tool",
                 &[
                     "{{project_dir}}",
-                    "{{workspace_dir}}",
+                    "{{workspace_root}}",
                     "{{build_dir}}",
                     "{{profile}}",
                     "{{elf}}",
