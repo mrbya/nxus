@@ -47,8 +47,8 @@ args = ["configured", "{{profile}}"]
 command = "echo"
 args = [
     "build_root: {{build_root}}",
-    "workspace_dir: {{workspace_dir}}",
-    "overlay_dir: {{overlay_dir}}"
+    "workspace_root: {{workspace_root}}",
+    "overlay_root: {{overlay_root}}"
 ]
 
 [profile.sim]
@@ -904,7 +904,7 @@ fn exec_paths_overrides_relative() {
         .assert()
         .success()
         .stdout(predicate::str::contains(format!(
-            "workspace_dir: {}/envws",
+            "workspace_root: {}/envws",
             fixture.project_dir.display()
         )))
         .stdout(predicate::str::contains(format!(
@@ -912,7 +912,7 @@ fn exec_paths_overrides_relative() {
             fixture.project_dir.display()
         )))
         .stdout(predicate::str::contains(format!(
-            "overlay_dir: {}/config",
+            "overlay_root: {}/config",
             fixture.project_dir.display()
         )));
 
@@ -923,7 +923,7 @@ fn exec_paths_overrides_relative() {
         .assert()
         .success()
         .stdout(predicate::str::contains(format!(
-            "workspace_dir: {}/workspace",
+            "workspace_root: {}/workspace",
             fixture.project_dir.display()
         )))
         .stdout(predicate::str::contains(format!(
@@ -931,7 +931,7 @@ fn exec_paths_overrides_relative() {
             fixture.project_dir.display()
         )))
         .stdout(predicate::str::contains(format!(
-            "overlay_dir: {}/config",
+            "overlay_root: {}/config",
             fixture.project_dir.display()
         )));
 
@@ -942,7 +942,7 @@ fn exec_paths_overrides_relative() {
         .assert()
         .success()
         .stdout(predicate::str::contains(format!(
-            "workspace_dir: {}/workspace",
+            "workspace_root: {}/workspace",
             fixture.project_dir.display()
         )))
         .stdout(predicate::str::contains(format!(
@@ -950,7 +950,7 @@ fn exec_paths_overrides_relative() {
             fixture.project_dir.display()
         )))
         .stdout(predicate::str::contains(format!(
-            "overlay_dir: {}/envconfig",
+            "overlay_root: {}/envconfig",
             fixture.project_dir.display()
         )));
 }
@@ -965,13 +965,13 @@ fn exec_paths_overrides_absolute() {
         .env("NXUS_WORKSPACE", "/abs/envws")
         .assert()
         .success()
-        .stdout(predicate::str::contains("workspace_dir: /abs/envws"))
+        .stdout(predicate::str::contains("workspace_root: /abs/envws"))
         .stdout(predicate::str::contains(format!(
             "build_root: {}/build",
             fixture.project_dir.display()
         )))
         .stdout(predicate::str::contains(format!(
-            "overlay_dir: {}/config",
+            "overlay_root: {}/config",
             fixture.project_dir.display()
         )));
 
@@ -982,12 +982,12 @@ fn exec_paths_overrides_absolute() {
         .assert()
         .success()
         .stdout(predicate::str::contains(format!(
-            "workspace_dir: {}/workspace",
+            "workspace_root: {}/workspace",
             fixture.project_dir.display()
         )))
         .stdout(predicate::str::contains("build_root: /abs/envbuild"))
         .stdout(predicate::str::contains(format!(
-            "overlay_dir: {}/config",
+            "overlay_root: {}/config",
             fixture.project_dir.display()
         )));
 
@@ -998,12 +998,12 @@ fn exec_paths_overrides_absolute() {
         .assert()
         .success()
         .stdout(predicate::str::contains(format!(
-            "workspace_dir: {}/workspace",
+            "workspace_root: {}/workspace",
             fixture.project_dir.display()
         )))
         .stdout(predicate::str::contains(format!(
             "build_root: {}/build",
             fixture.project_dir.display()
         )))
-        .stdout(predicate::str::contains("overlay_dir: /abs/envconfig"));
+        .stdout(predicate::str::contains("overlay_root: /abs/envconfig"));
 }
