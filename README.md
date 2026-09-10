@@ -44,9 +44,15 @@ Nxus is a CLI build-system companion for opinionated NuttX projects, driven by a
 
 ## Why?
 
-Do you enjoy working with NuttX RTOS, but feel like it should be a dependency you link to your app rather than directly working inside the RTOS repositary code to be able to build your app? Nxus is here for the rescue. 
+Do you enjoy working with NuttX RTOS, but feel like it should be a dependency you link to your app
+rather than directly working inside the RTOS repositary code to be able to build your app? Nxus is
+here for the rescue. 
 
-Nxus defines an opinionated project structure where your app is the main project and NuttX appears as a project-local workspace dependency. It also provides all needed project-level convention around this concept: a local NuttX workspace management, repeatable profile selection, generated board configurations using config overlays, predictable build outputs, and commands for building, running, testing, flashing, and project tooling all declaratively configured using a `nxus.toml` config file.
+Nxus defines an opinionated project structure where your app is the main project and NuttX appears
+as a project-local workspace dependency. It also provides all needed project-level convention around
+this concept: a local NuttX workspace management, repeatable profile selection, generated board configurations
+using config overlays, predictable build outputs, and commands for building, running, testing, flashing,
+and project tooling all declaratively configured using a `nxus.toml` config file.
 
 ## Features
 
