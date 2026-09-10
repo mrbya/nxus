@@ -44,19 +44,9 @@ Nxus is a CLI build-system companion for opinionated NuttX projects, driven by a
 
 ## Why?
 
-NuttX already provides the build system and board configurations. Nxus supplies
-the project-level convention around them: a local NuttX workspace, repeatable
-profile selection, generated board configurations, predictable build outputs,
-and commands for building, running, testing, flashing, and project tooling.
+Do you enjoy working with NuttX RTOS, but feel like it should be a dependency you link to your app rather than directly working inside the RTOS repositary code to be able to build your app? Nxus is here for the rescue. 
 
-Instead of remembering a different collection of CMake, Ninja, Git, simulator,
-and programmer invocations for every target, keep the project choices in one
-`nxus.toml`. A profile can represent a simulator, a test image, or production
-hardware while retaining separate generated configurations and build artifacts.
-
-Nxus manages its own project-specific clones of `nuttx` and `nuttx-apps`; it
-does not replace NuttX's build system or attempt to be a general-purpose shell
-DSL.
+Nxus defines an opinionated project structure where your app is the main project and NuttX appears as a project-local workspace dependency. It also provides all needed project-level convention around this concept: a local NuttX workspace management, repeatable profile selection, generated board configurations using config overlays, predictable build outputs, and commands for building, running, testing, flashing, and project tooling all declaratively configured using a `nxus.toml` config file.
 
 ## Features
 
@@ -64,10 +54,9 @@ DSL.
 - Manage project-local `nuttx` and `nuttx-apps` workspaces.
 - Configure, build, run, test, and flash named NuttX profiles.
 - Generate and link profile-specific board configurations from shared overlays.
-- Keep profile build outputs separate and optionally link `compile_commands.json`.
+- Keep profile build outputs separate.
 - Relocate workspace, build, and overlay roots through configuration or environment overrides.
 - Define structured project commands with paths, artifacts, arguments, and a working directory.
-- Discover `nxus.toml` when invoked from nested project directories.
 - Preview external commands with dry-run mode and control output with verbosity.
 
 ---
@@ -86,16 +75,11 @@ For development without installation, run it with:
 just run -- --help
 ```
 
-The repository metadata permits publishing, but a public package release is not
-assumed here. Install from a checkout until an explicitly published release is
-available.
-
 ## Requirements
 
 - Git, for the project-local NuttX repositories.
 - CMake and Ninja, used to configure and build NuttX.
 - The host tools and cross toolchain required by the NuttX board profiles you use.
-- Rust only when installing or building Nxus from source.
 
 Use the [NuttX installation guide](https://nuttx.apache.org/docs/latest/quickstart/install.html)
 for the platform-specific NuttX SDK and toolchain setup. Nxus does not install
@@ -529,7 +513,7 @@ Nxus expands placeholders in `command`, every configured `args` item, and `cwd`:
 | `{{workspace_dir}}` | Fully resolved workspace root. |
 | `{{build_root}}` | Fully resolved build root. |
 | `{{build_dir}}` | `<resolved-build-root>/<active-profile>`. |
-| `{{overlay_dir}}` | Fully resolved overlay root. |
+| `{{overlay_root}}` | Fully resolved overlay root. |
 | `{{profile}}` | Active profile name. |
 | `{{elf}}` | Existing `<build-dir>/nuttx` artifact. |
 | `{{bin}}` | Existing `<build-dir>/nuttx.bin` artifact. |
