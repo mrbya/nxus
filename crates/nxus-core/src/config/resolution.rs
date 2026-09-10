@@ -304,6 +304,27 @@ mod tests {
     }
 
     #[test]
+    fn resolve_resolves_absolute_path_overrides() {
+        let mut cfg = NxusConfig::new();
+        cfg.project.overlay_root = Some(String::from("/abs/overlays"));
+        cfg.build.root = Some(String::from("/abs/out"));
+        cfg.workspace.root = Some(String::from("/abs/ws"));
+
+        let profile = String::from("sim");
+        let resolved =
+            ResolvedConfig::resolve(true, true, 4, true, &context(), Some(&profile), &cfg)
+                .expect("config should resolve");
+
+        assert_eq!(resolved.build_root, PathBuf::from("/abs/out"));
+        assert_eq!(resolved.build_dir, PathBuf::from("/abs/out/sim"));
+        assert_eq!(resolved.workspace_root, PathBuf::from("/abs/ws"));
+        assert_eq!(
+            resolved.config_overlay,
+            PathBuf::from("/abs/overlays/sim.overlay")
+        );
+    }
+
+    #[test]
     fn resolve_uses_default_profile_when_not_selected() {
         let cfg = NxusConfig::new();
 

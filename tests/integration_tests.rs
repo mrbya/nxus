@@ -43,6 +43,14 @@ args = ["{{elf}}"]
 command = "tool"
 args = ["configured", "{{profile}}"]
 
+[command.paths]
+command = "echo"
+args = [
+    "build_root: {{build_root}}",
+    "workspace_dir: {{workspace_dir}}",
+    "overlay_dir: {{overlay_dir}}"
+]
+
 [profile.sim]
 arch = "sim"
 family = "sim"
@@ -883,4 +891,119 @@ fn exec_fails_when_requested_artifact_is_missing() {
         .stderr(predicate::str::contains(
             "required command artifact `elf` not found",
         ));
+}
+
+#[test]
+fn exec_paths_overrides_relative() {
+    let fixture = ProjectFixture::new();
+
+    fixture
+        .command()
+        .args(["exec", "paths"])
+        .env("NXUS_WORKSPACE", "envws")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains(format!(
+            "workspace_dir: {}/envws",
+            fixture.project_dir.display()
+        )))
+        .stdout(predicate::str::contains(format!(
+            "build_root: {}/build",
+            fixture.project_dir.display()
+        )))
+        .stdout(predicate::str::contains(format!(
+            "overlay_dir: {}/config",
+            fixture.project_dir.display()
+        )));
+
+    fixture
+        .command()
+        .args(["exec", "paths"])
+        .env("NXUS_BUILD_ROOT", "envbuild")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains(format!(
+            "workspace_dir: {}/workspace",
+            fixture.project_dir.display()
+        )))
+        .stdout(predicate::str::contains(format!(
+            "build_root: {}/envbuild",
+            fixture.project_dir.display()
+        )))
+        .stdout(predicate::str::contains(format!(
+            "overlay_dir: {}/config",
+            fixture.project_dir.display()
+        )));
+
+    fixture
+        .command()
+        .args(["exec", "paths"])
+        .env("NXUS_OVERLAY_ROOT", "envconfig")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains(format!(
+            "workspace_dir: {}/workspace",
+            fixture.project_dir.display()
+        )))
+        .stdout(predicate::str::contains(format!(
+            "build_root: {}/build",
+            fixture.project_dir.display()
+        )))
+        .stdout(predicate::str::contains(format!(
+            "overlay_dir: {}/envconfig",
+            fixture.project_dir.display()
+        )));
+}
+
+#[test]
+fn exec_paths_overrides_absolute() {
+    let fixture = ProjectFixture::new();
+
+    fixture
+        .command()
+        .args(["exec", "paths"])
+        .env("NXUS_WORKSPACE", "/abs/envws")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("workspace_dir: /abs/envws"))
+        .stdout(predicate::str::contains(format!(
+            "build_root: {}/build",
+            fixture.project_dir.display()
+        )))
+        .stdout(predicate::str::contains(format!(
+            "overlay_dir: {}/config",
+            fixture.project_dir.display()
+        )));
+
+    fixture
+        .command()
+        .args(["exec", "paths"])
+        .env("NXUS_BUILD_ROOT", "/abs/envbuild")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains(format!(
+            "workspace_dir: {}/workspace",
+            fixture.project_dir.display()
+        )))
+        .stdout(predicate::str::contains("build_root: /abs/envbuild"))
+        .stdout(predicate::str::contains(format!(
+            "overlay_dir: {}/config",
+            fixture.project_dir.display()
+        )));
+
+    fixture
+        .command()
+        .args(["exec", "paths"])
+        .env("NXUS_OVERLAY_ROOT", "/abs/envconfig")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains(format!(
+            "workspace_dir: {}/workspace",
+            fixture.project_dir.display()
+        )))
+        .stdout(predicate::str::contains(format!(
+            "build_root: {}/build",
+            fixture.project_dir.display()
+        )))
+        .stdout(predicate::str::contains("overlay_dir: /abs/envconfig"));
 }
