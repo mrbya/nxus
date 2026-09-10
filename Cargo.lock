@@ -619,7 +619,7 @@ dependencies = [
 
 [[package]]
 name = "nxus"
-version = "0.0.1"
+version = "1.0.0"
 dependencies = [
  "assert_cmd",
  "criterion",
@@ -631,7 +631,7 @@ dependencies = [
 
 [[package]]
 name = "nxus-core"
-version = "0.0.1"
+version = "1.0.0"
 dependencies = [
  "chrono",
  "include_dir",
@@ -650,7 +650,7 @@ dependencies = [
 
 [[package]]
 name = "nxus-shell"
-version = "0.0.1"
+version = "1.0.0"
 dependencies = [
  "clap",
  "indexmap",

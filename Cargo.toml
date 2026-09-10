@@ -11,12 +11,12 @@ authors                 = ["mrbya <v.toth.svk2@gmail.com>"]
 description             = "NuttX CLI companion"
 edition                 = "2024"
 rust-version            = "1.85.0"
-homepage                = "{TODO: add project repo}"
-repository              = "{TODO: add project repo}"
+homepage                = "https://gitlab.com/byacrates/nxus"
+repository              = "https://gitlab.com/byacrates/nxus"
 license                 = "MIT OR Apache-2.0"
 keywords                = ["nxus", "cli"]
 categories              = ["command-line-utilities"]
-version                 = "0.0.1"
+version                 = "1.0.0"
 
 [package]
 name                    = "nxus"
@@ -34,8 +34,8 @@ publish                 = true
 
 [workspace.dependencies]
 # nxus crates
-nxus-shell  = { path = "crates/nxus-shell" }
-nxus-core   = { path = "crates/nxus-core" }
+nxus-shell  = { path = "crates/nxus-shell", version = "1.0.0"}
+nxus-core   = { path = "crates/nxus-core", version = "1.0.0"}
 # Other runtime deps
 clap                    = { version = "4", features = ["derive"] }
 thiserror               = { version = "2" }
