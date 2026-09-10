@@ -12,8 +12,26 @@ categories.workspace    = true
 description             = "nxus - core API"
 
 [dependencies]
+thiserror.workspace     = true
+termcolor.workspace     = true
+serde.workspace         = true
+toml.workspace          = true
+toml_edit.workspace     = true
+indexmap.workspace      = true
+symlink.workspace       = true
+include_dir.workspace   = true
+tempfile.workspace      = true
+zappy-core.workspace    = true
+zappy-fs.workspace      = true
+chrono.workspace        = true
+spinners                = { workspace = true, optional = true }
 
 [dev-dependencies]
+
+[features]
+default = ["spinners"]
+full = []
+spinners = ["dep:spinners"]
 
 [package.metadata.cargo-udeps.ignore]
 normal = [

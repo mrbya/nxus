@@ -63,26 +63,42 @@
     clippy::verbose_file_reads
 )]
 
+/// Configured command resolution.
+pub(crate) mod command;
+/// Project command discovery metadata.
+pub(crate) mod command_info;
 /// Config resolution.
 pub(crate) mod config;
-/// Project context handling.
-pub(crate) mod context;
 /// Nux core error types.
 pub(crate) mod error;
-/// Symlink handling.
-pub(crate) mod links;
-/// Process handling.
-pub(crate) mod process;
-/// Profile resolution and management.
-pub(crate) mod profile;
-/// Workspace resolution and management.
+/// Command executor.
+pub(crate) mod exec;
+/// Flash command resolution.
+pub(crate) mod flash;
+/// Project initialization.
+pub(crate) mod init;
+/// Project-wide path resolution helpers.
+pub mod paths;
+/// Workspace manipulation.
 pub(crate) mod workspace;
 
-/// Remove this and implement your logic in this lib.
-#[must_use]
-pub fn add(a: i64, b: i64) -> i64 {
-    a.checked_add(b).unwrap_or(a)
-}
+// Re-exports.
+pub use command::resolve_command;
+pub use command_info::{CommandInfo, command_info};
+pub use config::{
+    CommandConfig, ConfigContext, DEFAULT_NUTTX_APPS_REV, DEFAULT_NUTTX_APPS_SRC,
+    DEFAULT_NUTTX_REV, DEFAULT_NUTTX_SRC, NxusConfig, ProfileConfig, ProfileSelection,
+    ResolvedConfig, discover_config, load_config,
+};
+pub use error::{CoreError, CoreResult};
+pub use exec::{Cmd, Runner};
+pub use flash::resolve_flash_command;
+pub use init::{init_project, init_project_config};
+pub use workspace::{
+    ensure_workspace, generate_config, link_app, link_compile_commands, link_config, unlink_app,
+    unlink_compile_commands, unlink_config,
+};
 
+// Test helpers and fixtures.
 #[cfg(test)]
 mod tests;

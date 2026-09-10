@@ -3,17 +3,18 @@
 //! Implements `nxus`'s command handlers and re-exports them for the shell
 //! crate.
 
-/// Prints a greeting.
-pub mod greet;
-
 /// Builds project for a specific profile.
 pub mod build;
 /// Cleans up all build artifacts and workspace.
 pub mod clean;
 /// Configures `NuttX` for a specific profile.
-pub mod conf;
+pub mod config;
+/// Executes a configured project command.
+pub mod exec;
 /// Flashes project binary built for a profile.
 pub mod flash;
+/// Initializes a Nxus project or config layout.
+pub mod init;
 /// Opens menuconfig for a specific profile.
 pub mod menuconfig;
 /// Liests profiles configured for project.
@@ -24,6 +25,19 @@ pub mod run;
 pub mod sim;
 /// Runs project tests.
 pub mod test;
+/// Manages project-local nuttx workspace .
+pub mod workspace;
 
 // Command re-exports for cli parser,
-pub use greet::greet;
+pub use build::build;
+pub use clean::clean;
+pub use config::config;
+pub use exec::exec;
+pub use flash::flash;
+pub use init::init;
+pub use menuconfig::menuconfig;
+pub use profiles::profiles;
+pub use run::run_binary;
+pub use sim::sim;
+pub use test::test;
+pub use workspace::workspace;

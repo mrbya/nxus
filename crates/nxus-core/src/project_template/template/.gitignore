@@ -1,0 +1,14 @@
+# IDEs
+/.idea
+/.vs
+/.vscode
+/.nvim
+/.cache
+/.claude
+
+# Project-local workspace
+/workspace
+
+# Build artifacts
+/build
+/public

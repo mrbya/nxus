@@ -1,0 +1,9 @@
+config __ZAPPY_PROJECT_NAME_SCREAMING___TEST_HOST
+	tristate "__ZAPPY_PROJECT_NAME__ host tests"
+	default n
+    depends on TESTING_UNITY
+    depends on TESTING_UNITY_EXCLUDE_SETJMP
+    depends on TESTING_UNITY_PRINT_FORMATTED
+    ---help---
+        Unity-based host tests for __ZAPPY_PROJECT_NAME__
+

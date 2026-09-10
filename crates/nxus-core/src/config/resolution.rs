@@ -1,0 +1,403 @@
+use std::path::PathBuf;
+
+use indexmap::IndexMap;
+
+use crate::config::{
+    ConfigContext, DEFAULT_BUILD_ROOT, DEFAULT_NUTTX_APPS_SRC, DEFAULT_NUTTX_SRC,
+    DEFAULT_OVERLAY_ROOT, DEFAULT_PROJECT_DEFAULT_PROFILE, DEFAULT_WORKSPACE_ROOT, NxusConfig,
+};
+use crate::{CommandConfig, CoreError, CoreResult, ProfileConfig, Runner};
+
+/// Workspace dir override env var name.
+const WORKSPACE_ENV_VAR: &str = "NXUS_WORKSPACE";
+
+/// Build root dir override env var name.
+const BUILD_ROOT_ENV_VAR: &str = "NXUS_BUILD_ROOT";
+
+/// Config overlay root override env var name.
+const OVERLAY_ROOT_ENV_VAR: &str = "NXUS_OVERLAY_ROOT";
+
+/// Resolved nxus configuration after parsing and resolving profile.
+#[derive(Debug, Clone)]
+pub struct ResolvedConfig {
+    // General config values
+    /// Current working dir.
+    pub cwd: PathBuf,
+    /// Pre-celan profile build dir?
+    pub clean: bool,
+    /// Rebuild project for selected profile?
+    pub rebuild: bool,
+    /// Runner with verbosity and dry-run config.
+    pub runner: Runner,
+    /// Config discovery context.
+    pub ctx: ConfigContext,
+    /// Whether the active profile came from explicit CLI selection or defaults.
+    pub profile_selection: ProfileSelection,
+    /// Selected profile name, if any.
+    pub profile: String,
+    /// Profiles.
+    pub profiles: IndexMap<String, ProfileConfig>,
+    /// Project-defined commands.
+    pub commands: IndexMap<String, CommandConfig>,
+
+    // Config overlay related values.
+    /// Config overlay root.
+    pub overlay_root: PathBuf,
+
+    /// Build dir related config values.
+    /// Project build root path.
+    pub build_root: PathBuf,
+    /// Build directory for the selected profile.
+    pub build_dir: PathBuf,
+    /// Whether to link `compile_commands.json`.
+    pub link_compile_commands: bool,
+
+    /// Project-local `NuttX` workspace related config values.
+    pub workspace_root: PathBuf,
+    /// Workspace nuttx clone source repository.
+    pub nuttx_src: String,
+    /// Workspace nuttx clone revision.
+    pub nuttx_rev: Option<String>,
+    /// Workspace nuttx apps source repository.
+    pub nuttx_apps_src: String,
+    /// Workspace nuttx apps revision.
+    pub nuttx_apps_rev: Option<String>,
+
+    /// Resolved profile config values.
+    /// Profile target architecture.
+    pub arch: String,
+    /// Profile target family.
+    pub family: String,
+    /// Profile target board.
+    pub board: String,
+    /// Profile target config base.
+    pub config_base: String,
+    /// Selected profile flash command configuration.
+    pub flash: Option<CommandConfig>,
+    /// Config overlay available for selected profile?
+    pub config_overlay: PathBuf,
+}
+
+/// Indicates how the active profile was selected.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ProfileSelection {
+    /// No profile was requested; the default profile is active.
+    Default,
+    /// A profile was explicitly requested by the caller.
+    Explicit,
+}
+
+impl ResolvedConfig {
+    /// Resolves configuration for a selected profile.
+    ///
+    /// # Errors
+    /// Returns [`CoreError::UnknownProfile`] when trying to resolve config for an unknown profile.
+    pub fn resolve(
+        clean: bool,
+        rebuild: bool,
+        verbose: u8,
+        dry_run: bool,
+        ctx: &ConfigContext,
+        profile: Option<&String>,
+        cfg: &NxusConfig,
+    ) -> CoreResult<Self> {
+        let selected = select_profile(profile.cloned(), cfg)?;
+
+        let build_root = resolve_path(
+            BUILD_ROOT_ENV_VAR,
+            cfg.build.root.as_ref(),
+            DEFAULT_BUILD_ROOT,
+            ctx,
+        );
+
+        let build_dir = build_root.join(&selected);
+        let link_compile_commands = cfg.build.link_compile_commands.unwrap_or(true);
+
+        let workspace_root = resolve_path(
+            WORKSPACE_ENV_VAR,
+            cfg.workspace.root.as_ref(),
+            DEFAULT_WORKSPACE_ROOT,
+            ctx,
+        );
+
+        let overlay_root = resolve_path(
+            OVERLAY_ROOT_ENV_VAR,
+            cfg.project.overlay_root.as_ref(),
+            DEFAULT_OVERLAY_ROOT,
+            ctx,
+        );
+
+        let nuttx_src = cfg
+            .workspace
+            .nuttx
+            .src
+            .clone()
+            .unwrap_or_else(|| String::from(DEFAULT_NUTTX_SRC));
+        let nuttx_rev = cfg.workspace.nuttx.rev.clone();
+
+        let nuttx_apps_src = cfg
+            .workspace
+            .nuttx_apps
+            .src
+            .clone()
+            .unwrap_or_else(|| String::from(DEFAULT_NUTTX_APPS_SRC));
+        let nuttx_apps_rev = cfg.workspace.nuttx_apps.rev.clone();
+
+        let Some(profile_cfg) = cfg.profiles.get(&selected) else {
+            return Err(CoreError::UnknownProfile { profile: selected });
+        };
+
+        let arch = profile_cfg.arch.clone();
+        let family = profile_cfg.family.clone();
+        let board = profile_cfg.board.clone();
+        let config_base = profile_cfg.config_base.clone();
+        let flash = profile_cfg.flash.clone();
+        let config_overlay = overlay_root.join(format!("{selected}.overlay"));
+
+        Ok(Self {
+            cwd: ctx.cwd.clone(),
+            clean,
+            rebuild,
+            runner: Runner { verbose, dry_run },
+            ctx: ctx.clone(),
+            profile_selection: if profile.is_some() {
+                ProfileSelection::Explicit
+            } else {
+                ProfileSelection::Default
+            },
+            profile: selected,
+            profiles: cfg.profiles.clone(),
+            commands: cfg.commands.clone(),
+            overlay_root,
+            build_root,
+            build_dir,
+            link_compile_commands,
+            workspace_root,
+            nuttx_src,
+            nuttx_rev,
+            nuttx_apps_src,
+            nuttx_apps_rev,
+            arch,
+            family,
+            board,
+            config_base,
+            flash,
+            config_overlay,
+        })
+    }
+
+    /// Creates new resilved config and overwrites its selected profile.
+    #[must_use]
+    pub fn with_profile(&self, profile: &str) -> Self {
+        let mut config = self.clone();
+        config.profile_selection = ProfileSelection::Explicit;
+        config.profile = String::from(profile);
+        config
+    }
+}
+
+/// Resolves a single path with env and config overrides.
+fn resolve_path(
+    env_var: &str,
+    cfg_path: Option<&String>,
+    default: &str,
+    ctx: &ConfigContext,
+) -> PathBuf {
+    let path = std::env::var(env_var).map_or_else(
+        |_| PathBuf::from(cfg_path.map_or(default, String::as_str)),
+        PathBuf::from,
+    );
+
+    if path.is_relative() {
+        ctx.project_dir.join(path)
+    } else {
+        path
+    }
+}
+
+/// Selects the active profile based on CLI flags and available profiles.
+///
+/// # Errors
+/// Returns [`CoreError::UnknownProfile`] when a requested profile does not exist.
+fn select_profile(profile: Option<String>, cfg: &NxusConfig) -> CoreResult<String> {
+    let selected = profile.unwrap_or_else(|| {
+        cfg.project
+            .default_profile
+            .clone()
+            .unwrap_or_else(|| String::from(DEFAULT_PROJECT_DEFAULT_PROFILE))
+    });
+
+    if !cfg.profiles.contains_key(&selected) {
+        return Err(CoreError::UnknownProfile { profile: selected });
+    }
+
+    Ok(selected)
+}
+
+#[cfg(test)]
+mod tests {
+    use std::path::PathBuf;
+
+    use crate::config::resolution::ProfileSelection;
+    use crate::config::{ConfigContext, NxusConfig, ResolvedConfig};
+    use crate::{CoreError, ProfileConfig};
+
+    fn context() -> ConfigContext {
+        ConfigContext {
+            project_dir: PathBuf::from("/tmp/project"),
+            cwd: PathBuf::from("/tmp/project/app"),
+        }
+    }
+
+    #[test]
+    fn resolve_uses_selected_profile_and_overrides() {
+        let mut cfg = NxusConfig::new();
+        cfg.project.default_profile = Some(String::from("prod"));
+        cfg.project.overlay_root = Some(String::from("overlays"));
+        cfg.build.root = Some(String::from("out"));
+        cfg.build.link_compile_commands = Some(false);
+        cfg.workspace.root = Some(String::from("ws"));
+        cfg.workspace.nuttx.src = Some(String::from("nuttx-src"));
+        cfg.workspace.nuttx.rev = Some(String::from("nuttx-rev"));
+        cfg.workspace.nuttx_apps.src = Some(String::from("apps-src"));
+        cfg.workspace.nuttx_apps.rev = Some(String::from("apps-rev"));
+        cfg.profiles.insert(
+            String::from("prod"),
+            ProfileConfig {
+                arch: String::from("arm"),
+                family: String::from("stm32"),
+                board: String::from("nucleo"),
+                config_base: String::from("release"),
+                flash: None,
+            },
+        );
+
+        let profile = String::from("prod");
+        let resolved =
+            ResolvedConfig::resolve(true, true, 4, true, &context(), Some(&profile), &cfg)
+                .expect("config should resolve");
+
+        assert!(resolved.clean);
+        assert!(resolved.rebuild);
+        assert_eq!(resolved.runner.verbose, 4);
+        assert!(resolved.runner.dry_run);
+        assert_eq!(resolved.profile_selection, ProfileSelection::Explicit);
+        assert_eq!(resolved.profile, profile);
+        assert!(resolved.commands.is_empty());
+        assert_eq!(resolved.build_root, PathBuf::from("/tmp/project/out"));
+        assert_eq!(resolved.build_dir, PathBuf::from("/tmp/project/out/prod"));
+        assert!(!resolved.link_compile_commands);
+        assert_eq!(resolved.workspace_root, PathBuf::from("/tmp/project/ws"));
+        assert_eq!(resolved.nuttx_src, String::from("nuttx-src"));
+        assert_eq!(resolved.nuttx_rev, Some(String::from("nuttx-rev")));
+        assert_eq!(resolved.nuttx_apps_src, String::from("apps-src"));
+        assert_eq!(resolved.nuttx_apps_rev, Some(String::from("apps-rev")));
+        assert_eq!(resolved.arch, String::from("arm"));
+        assert_eq!(resolved.family, String::from("stm32"));
+        assert_eq!(resolved.board, String::from("nucleo"));
+        assert_eq!(resolved.config_base, String::from("release"));
+        assert_eq!(resolved.flash, None);
+        assert_eq!(
+            resolved.config_overlay,
+            PathBuf::from("/tmp/project/overlays/prod.overlay")
+        );
+    }
+
+    #[test]
+    fn resolve_resolves_absolute_path_overrides() {
+        let mut cfg = NxusConfig::new();
+        cfg.project.overlay_root = Some(String::from("/abs/overlays"));
+        cfg.build.root = Some(String::from("/abs/out"));
+        cfg.workspace.root = Some(String::from("/abs/ws"));
+
+        let profile = String::from("sim");
+        let resolved =
+            ResolvedConfig::resolve(true, true, 4, true, &context(), Some(&profile), &cfg)
+                .expect("config should resolve");
+
+        assert_eq!(resolved.build_root, PathBuf::from("/abs/out"));
+        assert_eq!(resolved.build_dir, PathBuf::from("/abs/out/sim"));
+        assert_eq!(resolved.workspace_root, PathBuf::from("/abs/ws"));
+        assert_eq!(
+            resolved.config_overlay,
+            PathBuf::from("/abs/overlays/sim.overlay")
+        );
+    }
+
+    #[test]
+    fn resolve_uses_default_profile_when_not_selected() {
+        let cfg = NxusConfig::new();
+
+        let resolved = ResolvedConfig::resolve(false, false, 2, false, &context(), None, &cfg)
+            .expect("default config should resolve");
+
+        assert!(!resolved.rebuild);
+        assert_eq!(resolved.profile_selection, ProfileSelection::Default);
+        assert_eq!(resolved.profile, String::from("sim"));
+        assert!(resolved.commands.is_empty());
+        assert_eq!(resolved.build_dir, PathBuf::from("/tmp/project/build/sim"));
+    }
+
+    #[test]
+    fn resolve_errors_for_unknown_profile() {
+        let cfg = NxusConfig::new();
+        let requested_profile = String::from("missing");
+
+        let error = ResolvedConfig::resolve(
+            false,
+            false,
+            0,
+            false,
+            &context(),
+            Some(&requested_profile),
+            &cfg,
+        )
+        .expect_err("unknown profile should fail");
+
+        assert!(matches!(
+            error,
+            CoreError::UnknownProfile { profile } if profile == "missing"
+        ));
+    }
+
+    #[test]
+    fn with_profile_marks_profile_as_selected() {
+        let resolved =
+            ResolvedConfig::resolve(false, true, 1, true, &context(), None, &NxusConfig::new())
+                .expect("default config should resolve");
+
+        let selected = resolved.with_profile("test");
+
+        assert_eq!(selected.profile_selection, ProfileSelection::Explicit);
+        assert!(selected.rebuild);
+        assert_eq!(selected.profile, String::from("test"));
+        assert_eq!(selected.commands, resolved.commands);
+        assert_eq!(selected.build_dir, resolved.build_dir);
+        assert_eq!(selected.workspace_root, resolved.workspace_root);
+    }
+
+    #[test]
+    fn resolve_includes_project_defined_commands() {
+        let mut cfg = NxusConfig::new();
+        cfg.commands.insert(
+            String::from("size"),
+            crate::CommandConfig {
+                command: String::from("arm-none-eabi-size"),
+                args: vec![String::from("{elf}")],
+                cwd: Some(String::from("{{build_dir}}")),
+            },
+        );
+
+        let resolved = ResolvedConfig::resolve(false, false, 2, false, &context(), None, &cfg)
+            .expect("default config should resolve");
+
+        assert_eq!(
+            resolved.commands.get("size"),
+            Some(&crate::CommandConfig {
+                command: String::from("arm-none-eabi-size"),
+                args: vec![String::from("{elf}")],
+                cwd: Some(String::from("{{build_dir}}")),
+            })
+        );
+    }
+}

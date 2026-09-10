@@ -1,0 +1,27 @@
+# app/blinky/Kconfig
+config __ZAPPY_PROJECT_NAME_SCREAMING__
+	tristate "__ZAPPY_PROJECT_NAME__ app"
+	default n
+
+if __ZAPPY_PROJECT_NAME_SCREAMING__
+
+config __ZAPPY_PROJECT_NAME_SCREAMING___PROGNAME
+	string "Program name"
+	default "__ZAPPY_PROJECT_NAME_SNAKE__"
+	---help---
+		Name of the command as exposed to NSH.
+
+config __ZAPPY_PROJECT_NAME_SCREAMING___PRIORITY
+	int "Task priority"
+	default 100
+	---help---
+		Priority used when NSH starts the blinky app.
+
+config __ZAPPY_PROJECT_NAME_SCREAMING___STACKSIZE
+	int "Stack size"
+	default DEFAULT_TASK_STACKSIZE
+	---help---
+		Stack size used by the blinky task.
+
+endif
+

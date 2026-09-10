@@ -1,0 +1,45 @@
+# Template metadata.
+[template]
+id = "nxus"
+name = "nxus-nuttx-project"
+description = "Opinionated `NuttX` app managed by nxus"
+language = "cpp"
+version = "0.1.0"
+
+# Template source directory.
+[template.source]
+root = "template"
+
+# Template variable definitions.
+[variables]
+
+# Template file path config.
+[paths]
+exclude = [".git", ".DS_Store", "target", "build", "workspace", "public"]
+binary_extensions = ["png", "jpg", "jpeg", "gif", "ico", "pdf", "zip", "js", "mjs", "html", "css"]
+binary_files = []
+
+# Conditional include paths.
+# [[conditionals]]
+# path = "optional_file.txt"
+# when = "include_optional"
+
+# Template generation hooks
+[hooks]
+
+# Template validation config.
+# [validation]
+# output_dir_name = "zappy-validation-template"
+# variables = {
+#     test_var = "validation test var value",
+#     include_optional = true,
+# }
+
+# Validation setup hooks.
+# [[validation.setup]]
+
+# Validation process steps.
+# [[validation.steps]]
+
+# Validation teardown hooks.
+# [[validation.teardown]]

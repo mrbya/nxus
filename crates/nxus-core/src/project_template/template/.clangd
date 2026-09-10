@@ -1,0 +1,24 @@
+CompileFlags:
+  Add:
+    - -ferror-limit=0
+    - -Wall
+    - -Wextra
+    - -Wpedantic
+    - -Wshadow
+    - -Wconversion
+    - -Wsign-conversion
+    - -Wold-style-cast
+    - -Wnon-virtual-dtor
+    - -Woverloaded-virtual
+    - -Wnull-dereference
+    - -Wdouble-promotion
+
+  Remove:
+
+Diagnostics:
+  UnusedIncludes: Strict
+  MissingIncludes: None
+  ClangTidy:
+    Add: []
+    Remove: []
+

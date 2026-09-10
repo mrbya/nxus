@@ -1,6 +1,6 @@
 FROM archlinux:latest
 
-RUN pacman -Syyuu gcc git llvm clang rustup npm pkgconf mingw-w64-gcc --noconfirm --needed && \
+RUN pacman -Syyuu gcc git llvm clang rustup npm pkgconf mingw-w64-gcc cmake ninja --noconfirm --needed && \
     rustup default stable && \
     rustup update && \
     touch /root/.bashrc && \
@@ -18,6 +18,5 @@ RUN rustup install nightly && \
     cargo binstall cargo-criterion --no-confirm && \
     cargo binstall cargo-udeps --no-confirm && \
     cargo install cargo-audit --locked --features=fix
-    npm install -g markdown-toc
 
 CMD ["bash"]
