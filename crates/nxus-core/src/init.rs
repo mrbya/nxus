@@ -127,7 +127,7 @@ pub fn init_project(project_dir: &Path) -> CoreResult<()> {
 
     println!(
         "Generated `{}` in {}",
-        &template.manifest.template.id.as_str(),
+        template.manifest.template.id.as_str(),
         plan.output_dir.display()
     );
 
